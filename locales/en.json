@@ -164,5 +164,9 @@
     "testSubject": "Plex TV Picker – test",
     "testBody": "This email confirms that notifications work.",
     "footer": "You can change notification settings in Plex TV Picker."
+  },
+  "support": {
+    "text": "Enjoying Plex TV Picker? You can buy me a coffee.",
+    "button": "Support on Ko-fi"
   }
 }

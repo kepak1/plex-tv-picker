@@ -46,6 +46,12 @@ function Shell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <footer className="support">
+        <span>{t('support.text')}</span>
+        <a className="button kofi" href="https://ko-fi.com/kepak1" target="_blank" rel="noreferrer">
+          ☕ {t('support.button')}
+        </a>
+      </footer>
     </>
   );
 }

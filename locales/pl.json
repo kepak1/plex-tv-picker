@@ -168,5 +168,9 @@
     "testSubject": "Plex TV Picker – test",
     "testBody": "Ten mail potwierdza, że powiadomienia działają.",
     "footer": "Ustawienia powiadomień zmienisz w Plex TV Picker."
+  },
+  "support": {
+    "text": "Podoba Ci się Plex TV Picker? Możesz postawić mi kawę.",
+    "button": "Wesprzyj na Ko-fi"
   }
 }

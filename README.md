@@ -1,5 +1,7 @@
 # Plex TV Picker
 
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kepak1)
+
 A companion page for Plex that makes it easier to browse the Live TV guide and pick what to record:
 
 - movies and shows from the guide (poster, description, airings), in a list or grid view,
@@ -63,3 +65,7 @@ Requires Node 22.13+ (uses the built-in `node:sqlite`).
 - Guide items are matched to the library by GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
 - Scheduled recordings (`/media/subscriptions`, `/media/subscriptions/scheduled`) are read live with a one-minute cache.
 - The Plex link has the form `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/details?key=<EPG key>`.
+
+## Support
+
+If Plex TV Picker is useful to you, you can buy me a coffee on [Ko-fi](https://ko-fi.com/kepak1). ☕

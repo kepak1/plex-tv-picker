@@ -67,7 +67,17 @@ input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px;
 .topbar nav a.active { color: var(--text); background: var(--panel-2); }
 .user { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .user img { width: 28px; height: 28px; border-radius: 50%; }
-main { padding: 20px 24px 60px; max-width: 1500px; margin: 0 auto; }
+main { padding: 20px 24px 32px; max-width: 1500px; margin: 0 auto; }
+
+/* ---------- Support banner ---------- */
+.support {
+  max-width: 1500px; margin: 0 auto 32px; padding: 14px 24px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 16px;
+  color: var(--muted); font-size: 14px; text-align: center;
+  border-top: 1px solid var(--line);
+}
+.button.kofi { background: #ff5e5b; border-color: #ff5e5b; color: #fff; font-weight: 600; }
+.button.kofi:hover { background: #ff7471; border-color: #ff7471; }
 
 /* ---------- Login ---------- */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
