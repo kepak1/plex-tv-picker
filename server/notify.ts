@@ -2,7 +2,7 @@ import { config } from './config.js';
 import { db, now } from './db.js';
 import { localeOf, resolveLanguage, t } from './i18n.js';
 import { mailEnabled, sendMail } from './mail.js';
-import { machineIdentifier } from './plex.js';
+import { machineIdentifier, plexWebLink } from './plex.js';
 import { matchesWords } from './text.js';
 import {
   allItems,
@@ -177,8 +177,7 @@ async function renderEmail(
   const fmt = new Intl.DateTimeFormat(locale, {
     weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: config.timezone,
   });
-  const link = (key: string) =>
-    `${config.plexPublicUrl}/web/index.html#!/server/${machine}/details?key=${encodeURIComponent(key)}`;
+  const link = (key: string) => plexWebLink(machine, key);
 
   const rows = entries.map(({ item, airings }) => {
     const shown = airings.slice(0, 8);

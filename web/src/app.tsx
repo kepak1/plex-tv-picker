@@ -52,11 +52,14 @@ export function AppProvider({ children, login }: { children: ReactNode; login: (
     document.documentElement.lang = i18n.resolvedLanguage ?? 'pl';
   }, [i18n.resolvedLanguage]);
 
+  // Same format as plexWebLink in server/plex.ts: guide items need the provider in the route.
   const plexLink = useCallback(
-    (epgKey: string) =>
-      config?.machineIdentifier
-        ? `${config.plexUrl}/web/index.html#!/server/${config.machineIdentifier}/details?key=${encodeURIComponent(epgKey)}`
-        : `${config?.plexUrl}/web/index.html`,
+    (epgKey: string) => {
+      if (!config?.machineIdentifier) return `${config?.plexUrl}/web/index.html`;
+      const provider = epgKey.match(/^\/([^/]+)\//)?.[1];
+      const route = provider ? `server/${config.machineIdentifier}/provider/${provider}` : `server/${config.machineIdentifier}`;
+      return `${config.plexUrl}/web/index.html#!/${route}/details?key=${encodeURIComponent(epgKey)}`;
+    },
     [config],
   );
 

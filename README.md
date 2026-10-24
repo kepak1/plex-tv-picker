@@ -64,7 +64,7 @@ Requires Node 22.13+ (uses the built-in `node:sqlite`).
 - `server/sync.ts` downloads the guide from the Plex EPG provider (`/tv.plex.providers.epg.cloud:*/sections/*/all`): movies together with their airings, shows and their episodes (`type=4`). The same channel listed in several lineups is merged into one. It also downloads the library (movies, episodes) to know what you already have and, when a TMDB key is set, the ratings.
 - Guide items are matched to the library by GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
 - Scheduled recordings (`/media/subscriptions`, `/media/subscriptions/scheduled`) are read live with a one-minute cache.
-- The Plex link has the form `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/details?key=<EPG key>`.
+- The Plex link has the form `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/provider/<EPG provider>/details?key=<EPG key>`; without the provider part Plex Web opens guide items as library items (Play instead of Record).
 
 ## Support
 

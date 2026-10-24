@@ -239,7 +239,13 @@ export async function hasServerAccess(token: string, account: PlexUser): Promise
 
 // ---------- Links ----------
 
-export async function plexWebLink(epgKey: string): Promise<string> {
-  const id = await machineIdentifier();
-  return `${config.plexPublicUrl}/web/index.html#!/server/${id}/details?key=${encodeURIComponent(epgKey)}`;
+/**
+ * Plex Web page of a guide item. Guide items need the provider in the route
+ * (/server/<id>/provider/<epg provider>/details); without it Plex Web treats them as
+ * library items and shows "Play" instead of "Record". The provider is the key's first segment.
+ */
+export function plexWebLink(machineId: string, epgKey: string): string {
+  const provider = epgKey.match(/^\/([^/]+)\//)?.[1];
+  const route = provider ? `server/${machineId}/provider/${provider}` : `server/${machineId}`;
+  return `${config.plexPublicUrl}/web/index.html#!/${route}/details?key=${encodeURIComponent(epgKey)}`;
 }
