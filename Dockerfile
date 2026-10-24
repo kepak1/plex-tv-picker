@@ -19,5 +19,5 @@ COPY --from=build /app/package.json ./
 COPY locales ./locales
 VOLUME /data
 EXPOSE 8080
-USER node
+# Runs as root on purpose: ./data is bind-mounted and Docker creates it owned by root.
 CMD ["node", "dist/server/index.js"]
