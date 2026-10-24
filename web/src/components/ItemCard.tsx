@@ -20,6 +20,8 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
   const watching = wishes.some((w) => w.matches.some((m) => m.guid === item.guid));
   const next = item.airings[0];
   const mainLink = plexLink(item.type === 'movie' ? next.epgKey : item.epgKey);
+  const googleQuery = [item.title, item.year, t(`item.googleKind.${item.type}`)].filter(Boolean).join(' ');
+  const googleLink = `https://www.google.com/search?q=${encodeURIComponent(googleQuery)}`;
 
   return (
     <article className={`card ${view}${item.ignored ? ' dimmed' : ''}`}>
@@ -68,6 +70,9 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
           <button className={watching ? 'on' : ''} disabled={watching} onClick={() => actions.watch(item)}>
             {watching ? `✓ ${t('item.watching')}` : `☆ ${t('item.watch')}`}
           </button>
+          <a className="button" href={googleLink} target="_blank" rel="noreferrer">
+            {t('item.google')}
+          </a>
           <button className="link" onClick={() => setShowAirings(!showAirings)}>
             {showAirings ? t('item.hideAirings') : t('item.airings', { count: item.airings.length })} {showAirings ? '▴' : '▾'}
           </button>

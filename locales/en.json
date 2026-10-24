@@ -85,6 +85,11 @@
     "showAirings": "Show airings",
     "hideAirings": "Hide airings",
     "openInPlex": "Open in Plex",
+    "google": "Search Google",
+    "googleKind": {
+      "movie": "movie",
+      "show": "TV series"
+    },
     "ignore": "Hide",
     "ignoreTitle": "Hide whole title",
     "ignoreEpisode": "Hide this episode",

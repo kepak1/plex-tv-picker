@@ -89,6 +89,11 @@
     "showAirings": "Pokaż emisje",
     "hideAirings": "Ukryj emisje",
     "openInPlex": "Otwórz w Plex",
+    "google": "Szukaj w Google",
+    "googleKind": {
+      "movie": "film",
+      "show": "serial"
+    },
     "ignore": "Pomiń",
     "ignoreTitle": "Pomiń cały tytuł",
     "ignoreEpisode": "Pomiń ten odcinek",
