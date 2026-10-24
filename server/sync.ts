@@ -27,6 +27,19 @@ export function runSync(opts: { notify?: boolean } = {}): Promise<void> {
   return running;
 }
 
+/** Fetches ratings for titles that don't have one yet, e.g. right after a TMDB key was added. */
+export function refreshRatings(): Promise<void> {
+  if (!running) {
+    running = fetchMissingRatings()
+      .then(() => reloadCatalog())
+      .catch((err) => console.error('[tmdb] failed', err))
+      .finally(() => {
+        running = null;
+      });
+  }
+  return running;
+}
+
 async function doSync(notify: boolean): Promise<void> {
   const started = Date.now();
   console.log('[sync] started');

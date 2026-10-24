@@ -10,7 +10,7 @@ import { db, getMeta, now } from './db.js';
 import { endSession, loadUser, loginWithPlexToken, requireUser, startSession } from './auth.js';
 import { authUrl, checkPin, createPin, discoverSearch, machineIdentifier } from './plex.js';
 import { getChannels, getGenres, allItems, getItem, queryCatalog, reloadCatalog, type Query } from './catalog.js';
-import { isSyncing, runSync } from './sync.js';
+import { isSyncing, refreshRatings, runSync } from './sync.js';
 import { languages, localeOf, resolveLanguage, t } from './i18n.js';
 import { mailEnabled } from './mail.js';
 import { sendAlerts, sendTestEmail, wishMatches, type WishRow } from './notify.js';
@@ -307,6 +307,8 @@ app.setErrorHandler((err: Error & { statusCode?: number }, request, reply) => {
 reloadCatalog();
 cron.schedule(config.syncCron, () => runSync().catch(() => {}), { timezone: config.timezone });
 if (!getMeta('last_sync_at')) runSync({ notify: false }).catch(() => {});
+// Ratings normally come with the nightly sync; fetch missing ones now so a newly added TMDB key works right away.
+else if (tmdbEnabled()) void refreshRatings();
 
 await app.listen({ host: '0.0.0.0', port: config.port });
 console.log(`RecPick listening on :${config.port} (sync: "${config.syncCron}" ${config.timezone})`);

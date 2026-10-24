@@ -15,6 +15,8 @@ interface TmdbResult {
 
 export const tmdbEnabled = () => Boolean(config.tmdbApiKey);
 
+class TmdbAuthError extends Error {}
+
 async function search(type: string, title: string, year: number | null): Promise<number | null> {
   const key = config.tmdbApiKey!;
   // v4 read access tokens are long JWTs; v3 keys are 32 hex chars.
@@ -32,6 +34,7 @@ async function search(type: string, title: string, year: number | null): Promise
     await new Promise((r) => setTimeout(r, 2000));
     return search(type, title, year);
   }
+  if (res.status === 401) throw new TmdbAuthError('TMDB rejected the API key (401)');
   if (!res.ok) throw new Error(`TMDB ${res.status}`);
   const data = (await res.json()) as { results: TmdbResult[] };
   const norm = normalize(title);
@@ -56,18 +59,27 @@ export async function fetchMissingRatings(): Promise<void> {
   const update = db.prepare('UPDATE items SET tmdb_rating = ?, tmdb_checked_at = ? WHERE guid = ?');
   let index = 0;
   let failures = 0;
+  let rated = 0;
+  let authFailed = false;
   const worker = async () => {
-    while (index < rows.length) {
+    while (index < rows.length && !authFailed) {
       const row = rows[index++];
       try {
         // Show years in the guide are often the episode's year, so search shows without a year.
         const rating = await search(row.type, row.title, row.type === 'movie' ? row.year : null);
         update.run(rating, now(), row.guid);
+        if (rating != null) rated++;
       } catch (err) {
-        if (++failures === 1) console.warn('[tmdb] lookup failed', err);
+        if (err instanceof TmdbAuthError) {
+          // A bad key fails every request; stop instead of sending thousands of them.
+          if (!authFailed) console.error('[tmdb] TMDB rejected the API key (401): check TMDB_API_KEY (v3 key or v4 read access token)');
+          authFailed = true;
+        } else if (++failures === 1) {
+          console.warn('[tmdb] lookup failed', err);
+        }
       }
     }
   };
   await Promise.all(Array.from({ length: 8 }, worker));
-  console.log(`[tmdb] done (${failures} failures)`);
+  console.log(`[tmdb] done: ${rated} rated, ${failures} failures${authFailed ? ', stopped: invalid API key' : ''}`);
 }
