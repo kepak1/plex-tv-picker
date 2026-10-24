@@ -1,71 +1,125 @@
 # Plex TV Picker
 
+[![CI](https://github.com/kepak1/plex-tv-picker/actions/workflows/ci.yml/badge.svg)](https://github.com/kepak1/plex-tv-picker/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kepak1)
 
-A companion page for Plex that makes it easier to browse the Live TV guide and pick what to record:
+A self-hosted companion page for **Plex Live TV & DVR** that makes picking what to record much easier.
 
-- movies and shows from the guide (poster, description, airings), in a list or grid view,
-- filters: movies/shows, search, genre, channel, day, year, TMDB rating (optional), sorting,
-- "hide scheduled" and "hide what I have" toggles (checks your Plex library),
-- hide a whole title or a single episode (the "Hidden" page lets you undo it),
-- wishlist (a title picked from suggestions, or a free-text phrase); you get an email as soon as it appears in the guide, and every airing/episode is reported only once,
-- optional daily email with what is new in the guide,
-- sign-in with a Plex account: only users of your server get in, and each one has their own lists, email and language,
-- clicking a title or an airing opens it in Plex Web, where you start the recording.
+Plex's *Live TV → Browse* shows the same titles you already skipped over and over, gives you little room to filter, and hides the description behind a click. Plex TV Picker shows the whole guide as a poster list with the description visible, lets you hide what you are not interested in, and emails you when something from your wishlist shows up in the guide. One click takes you to the item in Plex, where you press **Record**.
 
-The guide is refreshed every night (`SYNC_CRON`, 3:00 by default); alerts and the daily email go out right after. There is also a "Refresh now" button on the page.
+![Guide in grid view](docs/screenshots/guide-grid.png)
 
-## Running (Docker)
+## Features
+
+- **The whole guide in one list**: movies and shows with posters, full descriptions, genres and every airing (channel, time, season/episode). List or grid view, works on phones.
+- **Filters**: movies/shows, title search, genre, channel, today/tomorrow/3/7 days, year, TMDB rating (optional), sorting by next airing, newest in guide, title, year or rating.
+- **Hide scheduled** and **hide what I already have** (checks your Plex library, episode by episode for shows).
+- **Hide forever**: a whole movie/show or a single episode. Everything hidden can be searched, restored or cleared on the *Hidden* page.
+- **Wishlist with email alerts**: pick a title from suggestions (the guide and Plex's catalogue) or add a free-text phrase. You get an email as soon as it appears in the guide; each airing or episode is reported once. For shows, only episodes you don't have and haven't scheduled are reported.
+- **Optional daily digest** with everything new in the guide.
+- **Open in Plex**: every title and airing links straight to its Plex Web page with the *Record* button.
+- **Search Google** button for every title.
+- **Sign in with Plex**: only users of your Plex server get in, and each user has their own hidden list, wishlist, email and language.
+- **Translations**: English and Polish; adding a language is one JSON file.
+
+| Show with its airings | Wishlist suggestions | Phone |
+| --- | --- | --- |
+| ![Show with airings](docs/screenshots/guide-list-airings.png) | ![Wishlist](docs/screenshots/wishlist.png) | ![Phone](docs/screenshots/mobile.png) |
+
+## Requirements
+
+- Plex Media Server with **Live TV & DVR** set up (a tuner and the Plex guide; this needs Plex Pass).
+- Docker (images are published for `linux/amd64` and `linux/arm64`).
+- The Plex token of the server owner.
+- An SMTP account if you want emails (e.g. Gmail with an app password).
+
+## Quick start (Docker Compose)
 
 ```bash
-cp .env.example .env    # fill in PLEX_TOKEN, PLEX_URL and SMTP_*
-docker compose up -d --build
+mkdir plex-tv-picker && cd plex-tv-picker
+curl -O https://raw.githubusercontent.com/kepak1/plex-tv-picker/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/kepak1/plex-tv-picker/main/.env.example
+# edit .env: at least PLEX_TOKEN and PLEX_URL, plus SMTP_* for emails
+docker compose up -d
 ```
 
-The page is served at `http://<server-ip>:8080`. Data (SQLite) is stored in `./data`.
+Open `http://<server-ip>:8080` and sign in with your Plex account. The first guide download starts automatically and takes a minute or two; after that the guide is refreshed every night (`SYNC_CRON`, 03:00 by default) and alerts plus the daily email go out right after. There is also a **Refresh now** button.
 
-If you expose it under a domain through a reverse proxy, set `APP_URL` to that address (it is used for the return from the Plex sign-in and for links in emails).
+To update: `docker compose pull && docker compose up -d`.
 
-### Environment variables
+If you put it behind a reverse proxy under its own domain, set `APP_URL` to that address (it is used for the return from the Plex sign-in and for links in emails).
+
+### Getting your Plex token
+
+In Plex Web open any item → **⋯** → **Get Info** → **View XML**. The address of the page that opens ends with `X-Plex-Token=…`; that value is your token. See also [Plex's guide](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
+
+The token stays on your server: the app uses it to read the guide, your library and your recording schedule. It never records anything by itself.
+
+### Configuration
 
 | Variable | Description |
 | --- | --- |
-| `PLEX_TOKEN` | Server owner's token (required). Plex Web → any item → ⋯ → Get Info → View XML → `X-Plex-Token` in the URL. |
+| `PLEX_TOKEN` | Server owner's token (required). |
 | `PLEX_URL` | Address the container uses to reach Plex (required), e.g. `http://192.168.1.10:32400`. |
-| `PLEX_PUBLIC_URL` | Plex address opened in the browser on click (defaults to `PLEX_URL`). |
+| `PLEX_PUBLIC_URL` | Plex address opened in your browser when you click a title (defaults to `PLEX_URL`). |
 | `PLEX_INSECURE_TLS` | `true` if `PLEX_URL` uses a self-signed certificate. |
-| `APP_URL` | Public address of this page. |
-| `SYNC_CRON`, `TZ` | Time of the nightly refresh and the time zone. |
-| `DEFAULT_LANGUAGE` | Default language (`en` in the example; `pl` if unset). |
-| `TMDB_API_KEY` | Optional: TMDB key (v3 key or v4 token). Enables ratings, the rating filter and sorting by rating. |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Email delivery. Without `SMTP_HOST`, emails are disabled. |
+| `APP_URL` | Public address of Plex TV Picker, if it differs from the address you open it with. |
+| `SYNC_CRON` | When to refresh the guide (cron syntax, default `0 3 * * *`). |
+| `TZ` | Time zone for the refresh and email times, e.g. `Europe/London` (default `UTC`). |
+| `DEFAULT_LANGUAGE` | Language for new users and emails, `en` or `pl` (default `en`). Each user can change it. |
+| `TMDB_API_KEY` | Optional [TMDB](https://www.themoviedb.org/settings/api) key (v3 key or v4 token). Enables ratings, the rating filter and sorting by rating. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Email delivery. Without `SMTP_HOST` emails are turned off. Use `SMTP_SECURE=true` for port 465. |
+| `PUID`, `PGID` | User and group the app runs as inside the container (default `1000`). The data folder is made writable for them on start. |
+
+Data (a single SQLite file) lives in `./data`.
 
 ## Languages
 
-Each `locales/<code>.json` file is one language for the UI and emails. To add a language, copy `locales/en.json` to e.g. `locales/de.json`, translate the values and set `_meta.name` (the name shown in settings) and `_meta.locale` (date formatting, e.g. `de-DE`). After rebuilding the image, the language shows up in settings.
+Each `locales/<code>.json` file is one language for the interface and the emails. To add one, copy `locales/en.json` to e.g. `locales/de.json`, translate the values and set `_meta.name` (shown in settings) and `_meta.locale` (date format, e.g. `de-DE`). Plural forms use the i18next suffixes `_one`, `_few`, `_many`, `_other`. Pull requests with new languages are very welcome.
 
-Plural forms use i18next suffixes: `_one`, `_few`, `_many`, `_other` (depending on the language).
+Descriptions in the guide stay in the language of your Plex guide provider.
 
-Descriptions from the TV guide stay in the language of the guide provider in Plex.
+## Building from source
 
-## Development
+```bash
+git clone https://github.com/kepak1/plex-tv-picker.git
+cd plex-tv-picker
+cp .env.example .env   # fill it in
+```
+
+Then either replace `image:` with `build: .` in `docker-compose.yml` and run `docker compose up -d --build`, or run it with Node.js 22.13+:
 
 ```bash
 npm install
-npm run dev        # backend on :8080 (tsx watch) + Vite on :5173
+npm run dev        # backend on :8080 (auto-reload) + Vite dev server on :5173
 npm run typecheck
-npm run build      # dist/web + dist/server
+npm run build && npm start
 ```
 
-Requires Node 22.13+ (uses the built-in `node:sqlite`).
+Stack: Node.js + Fastify + SQLite (`node:sqlite`) on the backend, React + Vite + i18next on the frontend.
 
 ## How it works
 
-- `server/sync.ts` downloads the guide from the Plex EPG provider (`/tv.plex.providers.epg.cloud:*/sections/*/all`): movies together with their airings, shows and their episodes (`type=4`). The same channel listed in several lineups is merged into one. It also downloads the library (movies, episodes) to know what you already have and, when a TMDB key is set, the ratings.
-- Guide items are matched to the library by GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
-- Scheduled recordings (`/media/subscriptions`, `/media/subscriptions/scheduled`) are read live with a one-minute cache.
-- The Plex link has the form `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/provider/<EPG provider>/details?key=<EPG key>`; without the provider part Plex Web opens guide items as library items (Play instead of Record).
+- Every night the app downloads the guide from your server's Plex EPG provider (`/tv.plex.providers.epg.cloud:*/sections/*/all`): movies with their airings, shows and all upcoming episodes. The same channel listed in several lineups is merged. It also reads your library to know what you already have and, if a TMDB key is set, fetches ratings.
+- Guide items are matched to your library by Plex GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
+- Your recording rules and scheduled recordings are read live from Plex (cached for a minute), so *Hide scheduled* is always current.
+- Links open `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/provider/<EPG provider>/details?key=<item>`, the same page you get from Plex's own guide.
+
+## Privacy
+
+Plex TV Picker runs entirely on your server and has no telemetry. Besides your Plex server it only talks to plex.tv (sign-in and title suggestions), Plex's image and metadata servers, TMDB (only with a key) and your SMTP server.
+
+## Limitations
+
+- Tested with the Plex cloud guide (`tv.plex.providers.epg.cloud`). XMLTV guides are not supported yet.
+- The *Sports* section of the guide is skipped.
+- Recording is started in Plex itself; the app does not create recording rules.
 
 ## Support
 
-If Plex TV Picker is useful to you, you can buy me a coffee on [Ko-fi](https://ko-fi.com/kepak1). ☕
+If Plex TV Picker saves you time, you can buy me a coffee on [Ko-fi](https://ko-fi.com/kepak1). ☕ Bug reports and ideas are welcome in [Issues](https://github.com/kepak1/plex-tv-picker/issues).
+
+## License
+
+[MIT](LICENSE)

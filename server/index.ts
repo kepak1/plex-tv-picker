@@ -1,7 +1,8 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyRequest } from 'fastify';
 import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
 import cron from 'node-cron';
+import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { config } from './config.js';
@@ -26,6 +27,8 @@ const bool = (v: unknown) => v === '1' || v === 'true';
 
 // ---------- Public ----------
 
+app.get('/api/health', async () => ({ ok: true }));
+
 app.get('/api/config', async () => ({
   machineIdentifier: await machineIdentifier().catch(() => null),
   plexUrl: config.plexPublicUrl,
@@ -36,19 +39,55 @@ app.get('/api/config', async () => ({
   timezone: config.timezone,
 }));
 
-app.post('/api/auth/pin', async (request) => {
+// A login PIN may only be completed by the browser that created it: the PIN id travels through
+// plex.tv redirects and URLs, so it is paired with a secret kept in an httpOnly cookie.
+const PIN_COOKIE = 'ptp_pin';
+const PIN_TTL_MS = 30 * 60_000;
+const pendingPins = new Map<number, { secret: string; expires: number }>();
+
+/** Only redirect back to this app (same host as the request, or APP_URL). */
+function safeForwardUrl(requested: string | undefined, request: FastifyRequest): URL {
+  const own = `${request.protocol}://${request.host}`;
+  const fallback = new URL(`${config.appUrl ?? own}/login`);
+  try {
+    const url = new URL(requested ?? '');
+    const allowed = [own, config.appUrl].filter(Boolean).map((u) => new URL(u!).origin);
+    return allowed.includes(url.origin) ? url : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+app.post('/api/auth/pin', async (request, reply) => {
   const { forwardUrl } = (request.body ?? {}) as { forwardUrl?: string };
   const pin = await createPin();
+  const secret = randomBytes(24).toString('base64url');
+  const nowMs = Date.now();
+  for (const [id, p] of pendingPins) if (p.expires < nowMs) pendingPins.delete(id);
+  pendingPins.set(pin.id, { secret, expires: nowMs + PIN_TTL_MS });
+  reply.setCookie(PIN_COOKIE, secret, {
+    path: '/api/auth',
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: request.protocol === 'https',
+    maxAge: PIN_TTL_MS / 1000,
+  });
   console.log(`[auth] login started (pin ${pin.id})`);
-  const back = new URL(forwardUrl ?? `${config.appUrl ?? `${request.protocol}://${request.host}`}/login`);
+  const back = safeForwardUrl(forwardUrl, request);
   back.searchParams.set('pin', String(pin.id));
   return { id: pin.id, url: authUrl(pin.code, back.toString()) };
 });
 
 app.post('/api/auth/pin/:id', async (request, reply) => {
   const id = Number((request.params as { id: string }).id);
+  const pending = pendingPins.get(id);
+  if (!pending || pending.expires < Date.now() || request.cookies[PIN_COOKIE] !== pending.secret) {
+    return reply.code(410).send({ status: 'expired' });
+  }
   const pin = await checkPin(id);
   if (!pin.authToken) return { status: 'pending' };
+  pendingPins.delete(id);
+  reply.clearCookie(PIN_COOKIE, { path: '/api/auth' });
   const user = await loginWithPlexToken(pin.authToken);
   if (!user) return reply.code(403).send({ status: 'denied' });
   startSession(reply, request, user.id);

@@ -1,9 +1,14 @@
 {
   "name": "plex-tv-picker",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Browse the Plex Live TV guide, hide titles, keep a wishlist and get email alerts.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kepak1/plex-tv-picker.git"
+  },
   "engines": {
     "node": ">=22.13"
   },

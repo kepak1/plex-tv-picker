@@ -10,14 +10,16 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PORT=8080 \
     DATA_DIR=/data \
-    TZ=Europe/Warsaw \
+    TZ=UTC \
     NODE_NO_WARNINGS=1
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata su-exec
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./
 COPY locales ./locales
+COPY docker-entrypoint.sh /usr/local/bin/
 VOLUME /data
 EXPOSE 8080
-# Runs as root on purpose: ./data is bind-mounted and Docker creates it owned by root.
+HEALTHCHECK --interval=60s --timeout=5s --start-period=20s CMD wget -qO- "http://127.0.0.1:${PORT}/api/health" >/dev/null || exit 1
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/server/index.js"]

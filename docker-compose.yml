@@ -1,6 +1,8 @@
 services:
   plex-tv-picker:
-    build: .
+    image: ghcr.io/kepak1/plex-tv-picker:latest
+    # To build from source instead, replace the line above with:
+    # build: .
     container_name: plex-tv-picker
     restart: unless-stopped
     ports:

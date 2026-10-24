@@ -20,7 +20,8 @@
     "waiting": "Waiting for you to sign in in the Plex window…",
     "denied": "This account has no access to this Plex server.",
     "failed": "Sign-in failed. Please try again.",
-    "timeout": "No confirmation from Plex within 2 minutes"
+    "timeout": "No confirmation from Plex within 2 minutes",
+    "expired": "the sign-in session expired or was started in another browser"
   },
   "filters": {
     "all": "All",

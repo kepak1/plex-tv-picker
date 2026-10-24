@@ -20,7 +20,8 @@
     "waiting": "Czekam na logowanie w oknie Plex…",
     "denied": "To konto nie ma dostępu do tego serwera Plex.",
     "failed": "Logowanie nie powiodło się. Spróbuj ponownie.",
-    "timeout": "Nie dostałem potwierdzenia z Plex w ciągu 2 minut"
+    "timeout": "Nie dostałem potwierdzenia z Plex w ciągu 2 minut",
+    "expired": "sesja logowania wygasła albo została rozpoczęta w innej przeglądarce"
   },
   "filters": {
     "all": "Wszystko",

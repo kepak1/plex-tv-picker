@@ -28,6 +28,12 @@ export function Login() {
           setState('denied');
           return;
         }
+        if (err instanceof ApiError && err.status === 410) {
+          // The PIN belongs to another browser or expired: start over.
+          setDetail(t('login.expired'));
+          setState('failed');
+          return;
+        }
         // Network hiccups and plex.tv errors are retried a few times before giving up.
         if (++errors >= 4) {
           setDetail(err instanceof Error ? err.message : String(err));

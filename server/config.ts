@@ -21,8 +21,8 @@ export const config = {
   // Public URL of this app, used for links in emails and the Plex login redirect.
   appUrl: optional('APP_URL')?.replace(/\/$/, ''),
   syncCron: env('SYNC_CRON', '0 3 * * *'),
-  timezone: env('TZ', 'Europe/Warsaw'),
-  defaultLanguage: env('DEFAULT_LANGUAGE', 'pl'),
+  timezone: env('TZ', 'UTC'),
+  defaultLanguage: env('DEFAULT_LANGUAGE', 'en'),
   tmdbApiKey: optional('TMDB_API_KEY'),
   smtp: {
     host: optional('SMTP_HOST'),
