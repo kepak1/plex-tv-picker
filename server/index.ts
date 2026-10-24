@@ -14,6 +14,7 @@ import { languages, localeOf, resolveLanguage, t } from './i18n.js';
 import { mailEnabled } from './mail.js';
 import { sendAlerts, sendTestEmail, wishMatches, type WishRow } from './notify.js';
 import { tmdbEnabled } from './tmdb.js';
+import { addIgnore, clearIgnores, listIgnores, removeIgnore } from './ignores.js';
 import { matchesWords, normalize } from './text.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
@@ -155,9 +156,15 @@ await app.register(async (api) => {
 
   // ----- Hidden titles / episodes -----
 
-  api.get('/api/ignores', async (request) =>
-    db.prepare('SELECT * FROM ignores WHERE user_id = ? ORDER BY created_at DESC').all(request.user!.id),
-  );
+  api.get('/api/ignores', async (request) => {
+    const q = request.query as Record<string, string>;
+    return listIgnores(request.user!.id, {
+      q: q.q || undefined,
+      scope: q.scope === 'title' || q.scope === 'episode' ? q.scope : undefined,
+      offset: num(q.offset),
+      limit: num(q.limit),
+    });
+  });
 
   api.post('/api/ignores', async (request, reply) => {
     const body = request.body as { scope: 'title' | 'episode'; itemGuid: string; episodeGuid?: string };
@@ -170,19 +177,28 @@ await app.register(async (api) => {
       const se = `${a.season != null ? `S${a.season}` : ''}${a.episode != null ? `E${a.episode}` : ''}`;
       label = [se, a.episodeTitle !== item.title ? a.episodeTitle : null].filter(Boolean).join(' ') || null;
     }
-    db.prepare(
-      `INSERT OR IGNORE INTO ignores (user_id, scope, item_guid, episode_guid, title, episode_label, thumb, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(request.user!.id, body.scope, item.guid, body.scope === 'episode' ? body.episodeGuid! : '', item.title, label, item.thumb, now());
+    addIgnore(request.user!.id, {
+      scope: body.scope,
+      itemGuid: item.guid,
+      episodeGuid: body.episodeGuid,
+      title: item.title,
+      episodeLabel: label,
+      thumb: item.thumb,
+    });
     return { ok: true };
   });
 
   api.delete('/api/ignores', async (request) => {
     const q = request.query as { id?: string; itemGuid?: string; episodeGuid?: string };
-    if (q.id) db.prepare('DELETE FROM ignores WHERE id = ? AND user_id = ?').run(Number(q.id), request.user!.id);
-    else if (q.episodeGuid) db.prepare('DELETE FROM ignores WHERE user_id = ? AND scope = ? AND episode_guid = ?').run(request.user!.id, 'episode', q.episodeGuid);
-    else if (q.itemGuid) db.prepare('DELETE FROM ignores WHERE user_id = ? AND scope = ? AND item_guid = ?').run(request.user!.id, 'title', q.itemGuid);
+    removeIgnore(request.user!.id, { id: num(q.id), itemGuid: q.itemGuid, episodeGuid: q.episodeGuid });
     return { ok: true };
+  });
+
+  api.post('/api/ignores/clear', async (request) => {
+    const { scope } = (request.body ?? {}) as { scope?: string };
+    const removed = clearIgnores(request.user!.id, scope === 'title' || scope === 'episode' ? scope : undefined);
+    console.log(`[ignores] ${request.user!.username} cleared ${removed} hidden entries${scope ? ` (${scope})` : ''}`);
+    return { removed };
   });
 
   // ----- Wishlist -----

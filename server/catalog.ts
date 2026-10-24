@@ -1,6 +1,9 @@
 import { db, getMeta, now } from './db.js';
 import { matchesWords, normalize } from './text.js';
 import { recordingState, type RecordingState } from './plex.js';
+import { userIgnores, type UserIgnores } from './ignores.js';
+
+export { userIgnores, type UserIgnores };
 
 export interface Airing {
   id: number;
@@ -178,23 +181,6 @@ export async function getRecordingState(force = false): Promise<RecordingState> 
 
 export function isScheduled(item: Item, airing: Airing, rec: RecordingState): boolean {
   return rec.scheduled.has(`${airing.episodeGuid ?? item.guid}|${airing.beginsAt}`);
-}
-
-export interface UserIgnores {
-  titles: Set<string>;
-  episodes: Set<string>;
-}
-
-export function userIgnores(userId: number): UserIgnores {
-  const rows = db.prepare('SELECT scope, item_guid, episode_guid FROM ignores WHERE user_id = ?').all(userId) as {
-    scope: string;
-    item_guid: string;
-    episode_guid: string;
-  }[];
-  return {
-    titles: new Set(rows.filter((r) => r.scope === 'title').map((r) => r.item_guid)),
-    episodes: new Set(rows.filter((r) => r.scope === 'episode').map((r) => r.episode_guid)),
-  };
 }
 
 export interface Query {

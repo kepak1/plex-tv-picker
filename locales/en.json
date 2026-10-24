@@ -109,7 +109,22 @@
     "wholeTitle": "Whole title",
     "episode": "Episode",
     "restore": "Restore",
-    "since": "since {{date}}"
+    "since": "since {{date}}",
+    "titles": "Titles",
+    "episodes": "Episodes",
+    "clearAll": "Clear all",
+    "clearTitles": "Clear titles",
+    "clearEpisodes": "Clear episodes",
+    "confirmClearAll_one": "Restore {{count}} hidden entry? Everything will show up in the list again.",
+    "confirmClearAll_other": "Restore {{count}} hidden entries? Everything will show up in the list again.",
+    "confirmClearTitles_one": "Restore {{count}} hidden title?",
+    "confirmClearTitles_other": "Restore {{count}} hidden titles?",
+    "confirmClearEpisodes_one": "Restore {{count}} hidden episode?",
+    "confirmClearEpisodes_other": "Restore {{count}} hidden episodes?",
+    "cleared_one": "Restored {{count}} entry.",
+    "cleared_other": "Restored {{count}} entries.",
+    "found_one": "Found {{count}} entry",
+    "found_other": "Found {{count}} entries"
   },
   "wishlist": {
     "title": "Wishlist",

@@ -165,6 +165,10 @@ main { padding: 20px 24px 32px; max-width: 1500px; margin: 0 auto; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--accent-ink); padding: 10px 18px; border-radius: 8px; font-weight: 600; z-index: 50; }
 
 /* ---------- Pages ---------- */
+button.danger { color: var(--danger); border-color: rgba(229, 83, 75, 0.45); }
+button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border-color: var(--danger); }
+.ignored-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
+.ignored-toolbar .segmented { max-width: 100%; overflow-x: auto; }
 .page.narrow { max-width: 820px; margin: 0 auto; }
 .rows { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 8px; }
 .row-item { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; }
