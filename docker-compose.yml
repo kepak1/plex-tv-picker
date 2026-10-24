@@ -1,0 +1,10 @@
+services:
+  plex-tv-picker:
+    build: .
+    container_name: plex-tv-picker
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file: .env
+    volumes:
+      - ./data:/data

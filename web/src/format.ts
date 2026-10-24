@@ -1,0 +1,53 @@
+import i18n, { localeTag } from './i18n';
+
+const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 1000;
+
+export function formatAiring(ts: number): string {
+  const date = new Date(ts * 1000);
+  const today = dayStart(new Date());
+  const day = dayStart(date);
+  const time = date.toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' });
+  if (day === today) return `${i18n.t('time.today')} ${time}`;
+  if (day === today + 86400) return `${i18n.t('time.tomorrow')} ${time}`;
+  return `${date.toLocaleDateString(localeTag(), { weekday: 'short', day: 'numeric', month: 'short' })} ${time}`;
+}
+
+export function formatDate(ts: number): string {
+  return new Date(ts * 1000).toLocaleString(localeTag(), { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+export function episodeLabel(a: { season: number | null; episode: number | null }): string {
+  return [a.season != null ? i18n.t('item.season', { season: a.season }) : '', a.episode != null ? i18n.t('item.episode', { episode: a.episode }) : '']
+    .join('')
+    .trim();
+}
+
+export function channelName(raw: string | null): string {
+  if (!raw) return '';
+  const m = raw.match(/\((.+)\)\s*$/);
+  return m ? m[1] : raw.replace(/^\d+\s+/, '');
+}
+
+export type When = 'today' | 'tomorrow' | 'next3' | 'next7' | 'all';
+
+export function whenRange(when: When): { from?: number; to?: number } {
+  const now = Math.floor(Date.now() / 1000);
+  const today = dayStart(new Date());
+  switch (when) {
+    case 'today':
+      return { from: now, to: today + 86400 };
+    case 'tomorrow':
+      return { from: today + 86400, to: today + 2 * 86400 };
+    case 'next3':
+      return { from: now, to: today + 3 * 86400 };
+    case 'next7':
+      return { from: now, to: today + 7 * 86400 };
+    default:
+      return {};
+  }
+}
+
+/** Poster URL resized by the backend. */
+export function img(url: string | null, width = 300): string | undefined {
+  return url ? `/api/img?w=${width}&u=${encodeURIComponent(url)}` : undefined;
+}
