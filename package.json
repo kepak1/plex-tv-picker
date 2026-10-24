@@ -1,6 +1,6 @@
 {
   "name": "recpick",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "private": true,
   "type": "module",
   "description": "Browse your Plex Live TV guide, hide titles, keep a wishlist and get email alerts. Works with Plex; not affiliated with Plex, Inc.",

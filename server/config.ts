@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 function env(name: string, fallback?: string): string {
   const value = process.env[name] ?? fallback;
   if (value === undefined || value === '') throw new Error(`Missing required environment variable ${name}`);
@@ -9,7 +12,12 @@ function optional(name: string): string | undefined {
   return value === undefined || value === '' ? undefined : value;
 }
 
+
+// package.json is the single source of the version (the Docker image ships it next to dist/).
+const pkg = JSON.parse(readFileSync(resolve(process.env.APP_ROOT ?? '.', 'package.json'), 'utf8')) as { version: string };
+
 export const config = {
+  version: pkg.version,
   port: Number(env('PORT', '8080')),
   dataDir: env('DATA_DIR', './data'),
   // Internal URL the backend uses to talk to Plex (can be http://plex:32400 inside Docker).

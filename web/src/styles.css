@@ -80,6 +80,8 @@ main { padding: 20px 24px 32px; max-width: 1500px; margin: 0 auto; }
 }
 .button.kofi { background: #ff5e5b; border-color: #ff5e5b; color: #fff; font-weight: 600; }
 .button.kofi:hover { background: #ff7471; border-color: #ff7471; }
+.support .version { flex-basis: 100%; font-size: 12px; color: var(--muted); text-decoration: none; }
+.support .version:hover { color: var(--text); }
 
 /* ---------- Login ---------- */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }

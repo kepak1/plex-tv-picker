@@ -15,7 +15,7 @@ import { Logo } from './components/Logo';
 
 function Shell() {
   const { t } = useTranslation();
-  const { me } = useApp();
+  const { me, config } = useApp();
   const logout = async () => {
     await api('/api/auth/logout', { method: 'POST' });
     location.href = '/';
@@ -51,6 +51,9 @@ function Shell() {
         <span>{t('support.text')}</span>
         <a className="button kofi" href="https://ko-fi.com/kepak1" target="_blank" rel="noreferrer">
           ☕ {t('support.button')}
+        </a>
+        <a className="version" href={`https://github.com/kepak1/recpick/releases`} target="_blank" rel="noreferrer">
+          RecPick v{config.version}
         </a>
       </footer>
     </>

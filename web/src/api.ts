@@ -21,6 +21,7 @@ export async function api<T>(path: string, init: RequestInit & { json?: unknown 
 }
 
 export interface AppConfig {
+  version: string;
   machineIdentifier: string | null;
   plexUrl: string;
   languages: { code: string; name: string; locale: string }[];

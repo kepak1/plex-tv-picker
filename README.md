@@ -1,6 +1,7 @@
 # RecPick
 
 [![CI](https://github.com/kepak1/recpick/actions/workflows/ci.yml/badge.svg)](https://github.com/kepak1/recpick/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/kepak1/recpick?include_prereleases&sort=semver)](https://github.com/kepak1/recpick/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kepak1)
 
@@ -47,6 +48,15 @@ docker compose up -d
 Open `http://<server-ip>:8080` and sign in with your Plex account. The first guide download starts automatically and takes a minute or two; after that the guide is refreshed every night (`SYNC_CRON`, 03:00 by default) and alerts plus the daily email go out right after. There is also a **Refresh now** button.
 
 To update: `docker compose pull && docker compose up -d`.
+
+### Versions
+
+RecPick is in **alpha** (`0.1.0-alpha`); see the [changelog](CHANGELOG.md) and [releases](https://github.com/kepak1/recpick/releases). The running version is shown at the bottom of every page.
+
+Docker image tags:
+
+- `latest`: the newest code on `main`
+- `0.1.0-alpha` (and so on): a specific release; pin this in `docker-compose.yml` if you prefer to update deliberately
 
 If you put it behind a reverse proxy under its own domain, set `APP_URL` to that address (it is used for the return from the Plex sign-in and for links in emails).
 

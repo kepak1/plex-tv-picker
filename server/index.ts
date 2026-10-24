@@ -27,9 +27,10 @@ const bool = (v: unknown) => v === '1' || v === 'true';
 
 // ---------- Public ----------
 
-app.get('/api/health', async () => ({ ok: true }));
+app.get('/api/health', async () => ({ ok: true, version: config.version }));
 
 app.get('/api/config', async () => ({
+  version: config.version,
   machineIdentifier: await machineIdentifier().catch(() => null),
   plexUrl: config.plexPublicUrl,
   languages: languages().map((code) => ({ code, name: t(code, '_meta.name'), locale: localeOf(code) })),
@@ -311,4 +312,4 @@ if (!getMeta('last_sync_at')) runSync({ notify: false }).catch(() => {});
 else if (tmdbEnabled()) void refreshRatings();
 
 await app.listen({ host: '0.0.0.0', port: config.port });
-console.log(`RecPick listening on :${config.port} (sync: "${config.syncCron}" ${config.timezone})`);
+console.log(`RecPick ${config.version} listening on :${config.port} (sync: "${config.syncCron}" ${config.timezone})`);

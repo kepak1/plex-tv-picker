@@ -36,6 +36,7 @@ const DEFAULTS: Filters = {
   sort: 'start',
 };
 const PAGE = 48;
+const AUTO_FILL = 12;
 const STORAGE_KEY = 'ptp_filters';
 
 function stored<T>(key: string, fallback: T): T {
@@ -136,6 +137,11 @@ export function Browse() {
     void load(false);
   }, [load]);
 
+  // Hiding titles empties the loaded page; top it up instead of leaving only a "Show more" button.
+  useEffect(() => {
+    if (!loading && items.length < AUTO_FILL && items.length < total) void load(true);
+  }, [loading, items.length, total, load]);
+
   const flash = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
@@ -175,6 +181,8 @@ export function Browse() {
     },
     ignoreEpisode: async (item, airing: Airing) => {
       await api('/api/ignores', { method: 'POST', json: { scope: 'episode', itemGuid: item.guid, episodeGuid: airing.episodeGuid } });
+      // The show leaves the list when its last visible airing is hidden.
+      if (!filters.showIgnored && item.airings.every((a) => a.episodeGuid === airing.episodeGuid)) setTotal((n) => n - 1);
       patchItem(item.guid, (i) => {
         const airings = filters.showIgnored
           ? i.airings.map((a) => (a.episodeGuid === airing.episodeGuid ? { ...a, ignored: true } : a))
