@@ -1,12 +1,12 @@
-# Plex TV Picker
+# RecPick
 
-[![CI](https://github.com/kepak1/plex-tv-picker/actions/workflows/ci.yml/badge.svg)](https://github.com/kepak1/plex-tv-picker/actions/workflows/ci.yml)
+[![CI](https://github.com/kepak1/recpick/actions/workflows/ci.yml/badge.svg)](https://github.com/kepak1/recpick/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/kepak1)
 
-A self-hosted companion page for **Plex Live TV & DVR** that makes picking what to record much easier.
+A self-hosted companion page that makes picking what to record with **Plex Live TV & DVR** much easier. *Works with Plex.*
 
-Plex's *Live TV → Browse* shows the same titles you already skipped over and over, gives you little room to filter, and hides the description behind a click. Plex TV Picker shows the whole guide as a poster list with the description visible, lets you hide what you are not interested in, and emails you when something from your wishlist shows up in the guide. One click takes you to the item in Plex, where you press **Record**.
+Plex's *Live TV → Browse* shows the same titles you already skipped over and over, gives you little room to filter, and hides the description behind a click. RecPick shows the whole guide as a poster list with the description visible, lets you hide what you are not interested in, and emails you when something from your wishlist shows up in the guide. One click takes you to the item in Plex, where you press **Record**.
 
 ![Guide in grid view](docs/screenshots/guide-grid.png)
 
@@ -37,9 +37,9 @@ Plex's *Live TV → Browse* shows the same titles you already skipped over and o
 ## Quick start (Docker Compose)
 
 ```bash
-mkdir plex-tv-picker && cd plex-tv-picker
-curl -O https://raw.githubusercontent.com/kepak1/plex-tv-picker/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/kepak1/plex-tv-picker/main/.env.example
+mkdir recpick && cd recpick
+curl -O https://raw.githubusercontent.com/kepak1/recpick/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/kepak1/recpick/main/.env.example
 # edit .env: at least PLEX_TOKEN and PLEX_URL, plus SMTP_* for emails
 docker compose up -d
 ```
@@ -64,7 +64,7 @@ The token stays on your server: the app uses it to read the guide, your library 
 | `PLEX_URL` | Address the container uses to reach Plex (required), e.g. `http://192.168.1.10:32400`. |
 | `PLEX_PUBLIC_URL` | Plex address opened in your browser when you click a title (defaults to `PLEX_URL`). |
 | `PLEX_INSECURE_TLS` | `true` if `PLEX_URL` uses a self-signed certificate. |
-| `APP_URL` | Public address of Plex TV Picker, if it differs from the address you open it with. |
+| `APP_URL` | Public address of RecPick, if it differs from the address you open it with. |
 | `SYNC_CRON` | When to refresh the guide (cron syntax, default `0 3 * * *`). |
 | `TZ` | Time zone for the refresh and email times, e.g. `Europe/London` (default `UTC`). |
 | `DEFAULT_LANGUAGE` | Language for new users and emails, `en` or `pl` (default `en`). Each user can change it. |
@@ -83,8 +83,8 @@ Descriptions in the guide stay in the language of your Plex guide provider.
 ## Building from source
 
 ```bash
-git clone https://github.com/kepak1/plex-tv-picker.git
-cd plex-tv-picker
+git clone https://github.com/kepak1/recpick.git
+cd recpick
 cp .env.example .env   # fill it in
 ```
 
@@ -108,7 +108,7 @@ Stack: Node.js + Fastify + SQLite (`node:sqlite`) on the backend, React + Vite +
 
 ## Privacy
 
-Plex TV Picker runs entirely on your server and has no telemetry. Besides your Plex server it only talks to plex.tv (sign-in and title suggestions), Plex's image and metadata servers, TMDB (only with a key) and your SMTP server.
+RecPick runs entirely on your server and has no telemetry. Besides your Plex server it only talks to plex.tv (sign-in and title suggestions), Plex's image and metadata servers, TMDB (only with a key) and your SMTP server.
 
 ## Limitations
 
@@ -118,8 +118,12 @@ Plex TV Picker runs entirely on your server and has no telemetry. Besides your P
 
 ## Support
 
-If Plex TV Picker saves you time, you can buy me a coffee on [Ko-fi](https://ko-fi.com/kepak1). ☕ Bug reports and ideas are welcome in [Issues](https://github.com/kepak1/plex-tv-picker/issues).
+If RecPick saves you time, you can buy me a coffee on [Ko-fi](https://ko-fi.com/kepak1). ☕ Bug reports and ideas are welcome in [Issues](https://github.com/kepak1/recpick/issues).
 
 ## License
 
 [MIT](LICENSE)
+
+## Disclaimer
+
+RecPick is an independent project and is not affiliated with, sponsored or endorsed by Plex, Inc. Plex is a trademark of Plex, Inc.

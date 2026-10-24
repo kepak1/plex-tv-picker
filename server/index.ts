@@ -309,4 +309,4 @@ cron.schedule(config.syncCron, () => runSync().catch(() => {}), { timezone: conf
 if (!getMeta('last_sync_at')) runSync({ notify: false }).catch(() => {});
 
 await app.listen({ host: '0.0.0.0', port: config.port });
-console.log(`Plex TV Picker listening on :${config.port} (sync: "${config.syncCron}" ${config.timezone})`);
+console.log(`RecPick listening on :${config.port} (sync: "${config.syncCron}" ${config.timezone})`);

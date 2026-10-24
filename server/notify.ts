@@ -156,7 +156,7 @@ function esc(s: string | null | undefined): string {
 
 function layout(lang: string, body: string): string {
   const appLink = config.appUrl
-    ? `<p style="margin:24px 0 0"><a href="${esc(config.appUrl)}" style="color:#e5a00d">${esc(t(lang, 'email.openApp'))}</a></p>`
+    ? `<p style="margin:24px 0 0"><a href="${esc(config.appUrl)}" style="color:#6d5ce8">${esc(t(lang, 'email.openApp'))}</a></p>`
     : '';
   return `<!doctype html><html><body style="margin:0;background:#f4f4f5;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#18181b">
 <div style="max-width:680px;margin:0 auto;padding:24px 16px">

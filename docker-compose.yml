@@ -1,9 +1,9 @@
 services:
-  plex-tv-picker:
-    image: ghcr.io/kepak1/plex-tv-picker:latest
+  recpick:
+    image: ghcr.io/kepak1/recpick:latest
     # To build from source instead, replace the line above with:
     # build: .
-    container_name: plex-tv-picker
+    container_name: recpick
     restart: unless-stopped
     ports:
       - "8080:8080"

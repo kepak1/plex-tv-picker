@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
+import { Logo } from '../components/Logo';
 
 /** Plex PIN login: redirect to app.plex.tv, which sends the user back here with ?pin=<id>. */
 export function Login() {
@@ -71,7 +72,7 @@ export function Login() {
     <div className="login">
       <div className="login-card">
         <div className="brand big">
-          <span className="brand-mark">▶</span> {t('app.name')}
+          <Logo size={32} /> {t('app.name')}
         </div>
         <h1>{t('login.title')}</h1>
         <p className="muted">{t('login.text')}</p>

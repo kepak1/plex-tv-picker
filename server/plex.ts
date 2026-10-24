@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 import { getMeta, setMeta } from './db.js';
 
-export const PRODUCT = 'Plex TV Picker';
+export const PRODUCT = 'RecPick';
 
 export function clientId(): string {
   let id = getMeta('client_id');

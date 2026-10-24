@@ -11,6 +11,7 @@ import { Browse } from './pages/Browse';
 import { Wishlist } from './pages/Wishlist';
 import { Ignored } from './pages/Ignored';
 import { Settings } from './pages/Settings';
+import { Logo } from './components/Logo';
 
 function Shell() {
   const { t } = useTranslation();
@@ -23,7 +24,7 @@ function Shell() {
     <>
       <header className="topbar">
         <NavLink to="/" className="brand">
-          <span className="brand-mark">▶</span> {t('app.name')}
+          <Logo /> {t('app.name')}
         </NavLink>
         <nav>
           <NavLink to="/" end>{t('nav.browse')}</NavLink>

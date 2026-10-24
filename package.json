@@ -1,13 +1,13 @@
 {
-  "name": "plex-tv-picker",
+  "name": "recpick",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Browse the Plex Live TV guide, hide titles, keep a wishlist and get email alerts.",
+  "description": "Browse your Plex Live TV guide, hide titles, keep a wishlist and get email alerts. Works with Plex; not affiliated with Plex, Inc.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kepak1/plex-tv-picker.git"
+    "url": "https://github.com/kepak1/recpick.git"
   },
   "engines": {
     "node": ">=22.13"

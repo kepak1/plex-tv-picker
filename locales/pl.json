@@ -4,7 +4,7 @@
     "locale": "pl-PL"
   },
   "app": {
-    "name": "Plex TV Picker"
+    "name": "RecPick"
   },
   "nav": {
     "browse": "Program",
@@ -189,14 +189,14 @@
     "digestSubject": "Nowości w programie TV ({{count}})",
     "digestIntro": "Nowe pozycje w programie od ostatniego maila:",
     "andMore": "…i {{count}} więcej",
-    "openApp": "Otwórz Plex TV Picker",
+    "openApp": "Otwórz RecPick",
     "openInPlex": "Otwórz w Plex, żeby nagrać",
-    "testSubject": "Plex TV Picker – test",
+    "testSubject": "RecPick – test",
     "testBody": "Ten mail potwierdza, że powiadomienia działają.",
-    "footer": "Ustawienia powiadomień zmienisz w Plex TV Picker."
+    "footer": "Ustawienia powiadomień zmienisz w RecPick."
   },
   "support": {
-    "text": "Podoba Ci się Plex TV Picker? Możesz postawić mi kawę.",
+    "text": "Podoba Ci się RecPick? Możesz postawić mi kawę.",
     "button": "Wesprzyj na Ko-fi"
   }
 }

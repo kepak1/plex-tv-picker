@@ -1,11 +1,20 @@
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { config } from './config.js';
 
 mkdirSync(config.dataDir, { recursive: true });
 
-export const db = new DatabaseSync(join(config.dataDir, 'plex-tv-picker.sqlite'));
+const dbFile = join(config.dataDir, 'recpick.sqlite');
+// The project was renamed from "Plex TV Picker"; carry the old database over.
+const legacyFile = join(config.dataDir, 'plex-tv-picker.sqlite');
+if (!existsSync(dbFile) && existsSync(legacyFile)) {
+  for (const suffix of ['', '-wal', '-shm']) {
+    if (existsSync(legacyFile + suffix)) renameSync(legacyFile + suffix, dbFile + suffix);
+  }
+}
+
+export const db = new DatabaseSync(dbFile);
 
 db.exec(`
 PRAGMA journal_mode = WAL;

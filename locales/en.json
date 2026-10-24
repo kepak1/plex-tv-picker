@@ -4,7 +4,7 @@
     "locale": "en-GB"
   },
   "app": {
-    "name": "Plex TV Picker"
+    "name": "RecPick"
   },
   "nav": {
     "browse": "Guide",
@@ -175,14 +175,14 @@
     "digestSubject": "New in the TV guide ({{count}})",
     "digestIntro": "New titles in the guide since the last email:",
     "andMore": "…and {{count}} more",
-    "openApp": "Open Plex TV Picker",
+    "openApp": "Open RecPick",
     "openInPlex": "Open in Plex to record",
-    "testSubject": "Plex TV Picker – test",
+    "testSubject": "RecPick – test",
     "testBody": "This email confirms that notifications work.",
-    "footer": "You can change notification settings in Plex TV Picker."
+    "footer": "You can change notification settings in RecPick."
   },
   "support": {
-    "text": "Enjoying Plex TV Picker? You can buy me a coffee.",
+    "text": "Enjoying RecPick? You can buy me a coffee.",
     "button": "Support on Ko-fi"
   }
 }
