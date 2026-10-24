@@ -6,14 +6,17 @@ import { api, ApiError } from '../api';
 export function Login() {
   const { t } = useTranslation();
   const [state, setState] = useState<'idle' | 'waiting' | 'denied' | 'failed'>('idle');
+  const [detail, setDetail] = useState('');
 
   useEffect(() => {
     const pin = new URLSearchParams(location.search).get('pin');
     if (!pin) return;
     setState('waiting');
     let tries = 0;
+    let errors = 0;
     let stopped = false;
     const poll = async () => {
+      if (stopped) return;
       try {
         const res = await api<{ status: string }>(`/api/auth/pin/${pin}`, { method: 'POST' });
         if (res.status === 'ok') {
@@ -21,11 +24,22 @@ export function Login() {
           return;
         }
       } catch (err) {
-        setState(err instanceof ApiError && err.status === 403 ? 'denied' : 'failed');
-        return;
+        if (err instanceof ApiError && err.status === 403) {
+          setState('denied');
+          return;
+        }
+        // Network hiccups and plex.tv errors are retried a few times before giving up.
+        if (++errors >= 4) {
+          setDetail(err instanceof Error ? err.message : String(err));
+          setState('failed');
+          return;
+        }
       }
-      if (!stopped && ++tries < 60) setTimeout(poll, 1500);
-      else setState('failed');
+      if (++tries < 80) setTimeout(poll, 1500);
+      else {
+        setDetail(t('login.timeout'));
+        setState('failed');
+      }
     };
     void poll();
     return () => {
@@ -41,7 +55,8 @@ export function Login() {
         json: { forwardUrl: `${location.origin}/login` },
       });
       location.href = url;
-    } catch {
+    } catch (err) {
+      setDetail(err instanceof Error ? err.message : String(err));
       setState('failed');
     }
   };
@@ -60,7 +75,12 @@ export function Login() {
           <button className="primary" onClick={start}>{t('login.button')}</button>
         )}
         {state === 'denied' && <p className="error">{t('login.denied')}</p>}
-        {state === 'failed' && <p className="error">{t('login.failed')}</p>}
+        {state === 'failed' && (
+          <p className="error">
+            {t('login.failed')}
+            {detail && <span className="small muted"> ({detail})</span>}
+          </p>
+        )}
       </div>
     </div>
   );

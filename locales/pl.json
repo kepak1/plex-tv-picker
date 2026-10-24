@@ -1,6 +1,11 @@
 {
-  "_meta": { "name": "Polski", "locale": "pl-PL" },
-  "app": { "name": "Plex TV Picker" },
+  "_meta": {
+    "name": "Polski",
+    "locale": "pl-PL"
+  },
+  "app": {
+    "name": "Plex TV Picker"
+  },
   "nav": {
     "browse": "Program",
     "wishlist": "Lista życzeń",
@@ -14,7 +19,8 @@
     "button": "Zaloguj przez Plex",
     "waiting": "Czekam na logowanie w oknie Plex…",
     "denied": "To konto nie ma dostępu do tego serwera Plex.",
-    "failed": "Logowanie nie powiodło się. Spróbuj ponownie."
+    "failed": "Logowanie nie powiodło się. Spróbuj ponownie.",
+    "timeout": "Nie dostałem potwierdzenia z Plex w ciągu 2 minut"
   },
   "filters": {
     "all": "Wszystko",
@@ -49,7 +55,10 @@
     "more": "Więcej filtrów",
     "less": "Mniej filtrów"
   },
-  "view": { "list": "Lista", "grid": "Siatka" },
+  "view": {
+    "list": "Lista",
+    "grid": "Siatka"
+  },
   "browse": {
     "count_one": "{{count}} tytuł",
     "count_few": "{{count}} tytuły",
@@ -136,7 +145,12 @@
     "today": "Dziś",
     "tomorrow": "Jutro"
   },
-  "common": { "error": "Coś poszło nie tak", "loading": "Ładowanie…", "close": "Zamknij", "cancel": "Anuluj" },
+  "common": {
+    "error": "Coś poszło nie tak",
+    "loading": "Ładowanie…",
+    "close": "Zamknij",
+    "cancel": "Anuluj"
+  },
   "email": {
     "alertSubject_one": "Z listy życzeń w programie: {{titles}}",
     "alertSubject_other": "Z listy życzeń w programie: {{titles}}",

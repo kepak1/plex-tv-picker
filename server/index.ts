@@ -38,17 +38,20 @@ app.get('/api/config', async () => ({
 app.post('/api/auth/pin', async (request) => {
   const { forwardUrl } = (request.body ?? {}) as { forwardUrl?: string };
   const pin = await createPin();
+  console.log(`[auth] login started (pin ${pin.id})`);
   const back = new URL(forwardUrl ?? `${config.appUrl ?? `${request.protocol}://${request.host}`}/login`);
   back.searchParams.set('pin', String(pin.id));
   return { id: pin.id, url: authUrl(pin.code, back.toString()) };
 });
 
 app.post('/api/auth/pin/:id', async (request, reply) => {
-  const pin = await checkPin(Number((request.params as { id: string }).id));
+  const id = Number((request.params as { id: string }).id);
+  const pin = await checkPin(id);
   if (!pin.authToken) return { status: 'pending' };
   const user = await loginWithPlexToken(pin.authToken);
   if (!user) return reply.code(403).send({ status: 'denied' });
   startSession(reply, request, user.id);
+  console.log(`[auth] ${user.username} signed in`);
   return { status: 'ok' };
 });
 

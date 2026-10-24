@@ -1,6 +1,11 @@
 {
-  "_meta": { "name": "English", "locale": "en-GB" },
-  "app": { "name": "Plex TV Picker" },
+  "_meta": {
+    "name": "English",
+    "locale": "en-GB"
+  },
+  "app": {
+    "name": "Plex TV Picker"
+  },
   "nav": {
     "browse": "Guide",
     "wishlist": "Wishlist",
@@ -14,7 +19,8 @@
     "button": "Sign in with Plex",
     "waiting": "Waiting for you to sign in in the Plex window…",
     "denied": "This account has no access to this Plex server.",
-    "failed": "Sign-in failed. Please try again."
+    "failed": "Sign-in failed. Please try again.",
+    "timeout": "No confirmation from Plex within 2 minutes"
   },
   "filters": {
     "all": "All",
@@ -49,7 +55,10 @@
     "more": "More filters",
     "less": "Fewer filters"
   },
-  "view": { "list": "List", "grid": "Grid" },
+  "view": {
+    "list": "List",
+    "grid": "Grid"
+  },
   "browse": {
     "count_one": "{{count}} title",
     "count_other": "{{count}} titles",
@@ -132,7 +141,12 @@
     "today": "Today",
     "tomorrow": "Tomorrow"
   },
-  "common": { "error": "Something went wrong", "loading": "Loading…", "close": "Close", "cancel": "Cancel" },
+  "common": {
+    "error": "Something went wrong",
+    "loading": "Loading…",
+    "close": "Close",
+    "cancel": "Cancel"
+  },
   "email": {
     "alertSubject_one": "Wishlist title in the guide: {{titles}}",
     "alertSubject_other": "Wishlist titles in the guide: {{titles}}",

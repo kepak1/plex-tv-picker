@@ -90,13 +90,17 @@ export async function serverGetAll(path: string, pageSize = 1000): Promise<PlexM
   return all;
 }
 
-let machineId: string | undefined;
-export async function machineIdentifier(): Promise<string> {
-  if (!machineId) {
-    const root = await serverGet<Container<{ machineIdentifier: string }>>('/');
-    machineId = root.MediaContainer.machineIdentifier;
+let serverInfo: { machineIdentifier: string; myPlexUsername?: string } | undefined;
+async function server(): Promise<{ machineIdentifier: string; myPlexUsername?: string }> {
+  if (!serverInfo) {
+    const root = await serverGet<Container<{ machineIdentifier: string; myPlexUsername?: string }>>('/');
+    serverInfo = root.MediaContainer;
   }
-  return machineId;
+  return serverInfo;
+}
+
+export async function machineIdentifier(): Promise<string> {
+  return (await server()).machineIdentifier;
 }
 
 export async function epgProviders(): Promise<string[]> {
@@ -217,14 +221,20 @@ export function plexUser(token: string): Promise<PlexUser> {
 }
 
 /** True when the account behind `token` can access this Plex server (owner or shared user). */
-export async function hasServerAccess(token: string): Promise<boolean> {
-  const id = await machineIdentifier();
-  const resources = await request<{ clientIdentifier: string; provides: string }[]>(
-    'https://plex.tv/api/v2/resources?includeHttps=1',
-    {},
-    token,
-  );
-  return resources.some((r) => r.clientIdentifier === id);
+export async function hasServerAccess(token: string, account: PlexUser): Promise<boolean> {
+  const { machineIdentifier: id, myPlexUsername } = await server();
+  // The owner is recognised directly, so a slow or incomplete resources list cannot lock them out.
+  if (myPlexUsername && [account.email, account.username].some((v) => v?.toLowerCase() === myPlexUsername.toLowerCase())) {
+    return true;
+  }
+  // plex.tv sometimes returns an incomplete list for a token created seconds ago, so check twice.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 2000));
+    const resources = await request<{ clientIdentifier: string }[]>('https://plex.tv/api/v2/resources?includeHttps=1', {}, token);
+    if (resources.some((r) => r.clientIdentifier === id)) return true;
+    console.warn(`[auth] ${account.username}: server not among ${resources.length} resources (attempt ${attempt + 1})`);
+  }
+  return false;
 }
 
 // ---------- Links ----------

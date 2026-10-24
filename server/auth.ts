@@ -14,8 +14,11 @@ declare module 'fastify' {
 }
 
 export async function loginWithPlexToken(token: string): Promise<UserRow | null> {
-  const [account, access] = await Promise.all([plexUser(token), hasServerAccess(token)]);
-  if (!access) return null;
+  const account = await plexUser(token);
+  if (!(await hasServerAccess(token, account))) {
+    console.warn(`[auth] ${account.username} denied: no access to this Plex server`);
+    return null;
+  }
   db.prepare(
     `INSERT INTO users (id, username, email, thumb, created_at, last_digest_at) VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET username = excluded.username, email = excluded.email, thumb = excluded.thumb`,
