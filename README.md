@@ -1,65 +1,65 @@
 # Plex TV Picker
 
-Strona obok Plexa do przeglądania programu Live TV i wybierania rzeczy do nagrania:
+A companion page for Plex that makes it easier to browse the Live TV guide and pick what to record:
 
-- lista filmów i seriali z programu (plakat, opis, emisje), widok listy lub siatki,
-- filtry: filmy/seriale, wyszukiwanie, gatunek, kanał, dzień, rok, ocena TMDB (opcjonalnie), sortowanie,
-- przełączniki „ukryj zaplanowane” i „ukryj te, które mam” (sprawdza bibliotekę Plexa),
-- pomijanie całego tytułu albo pojedynczego odcinka (lista „Pominięte” pozwala to cofnąć),
-- lista życzeń (tytuł z podpowiedzi albo luźna fraza); mail od razu po wykryciu w programie, każda emisja/odcinek zgłaszany raz,
-- opcjonalny codzienny mail z nowościami w programie,
-- logowanie kontem Plex: wchodzą tylko użytkownicy Twojego serwera, każdy ma swoje listy, email i język,
-- kliknięcie tytułu lub emisji otwiera ją w Plex Web, gdzie włączasz nagrywanie.
+- movies and shows from the guide (poster, description, airings), in a list or grid view,
+- filters: movies/shows, search, genre, channel, day, year, TMDB rating (optional), sorting,
+- "hide scheduled" and "hide what I have" toggles (checks your Plex library),
+- hide a whole title or a single episode (the "Hidden" page lets you undo it),
+- wishlist (a title picked from suggestions, or a free-text phrase); you get an email as soon as it appears in the guide, and every airing/episode is reported only once,
+- optional daily email with what is new in the guide,
+- sign-in with a Plex account: only users of your server get in, and each one has their own lists, email and language,
+- clicking a title or an airing opens it in Plex Web, where you start the recording.
 
-Program odświeża się co noc (`SYNC_CRON`, domyślnie 3:00); zaraz potem wychodzą alerty i codzienny mail. Na stronie jest też przycisk „Odśwież teraz”.
+The guide is refreshed every night (`SYNC_CRON`, 3:00 by default); alerts and the daily email go out right after. There is also a "Refresh now" button on the page.
 
-## Uruchomienie (Docker)
+## Running (Docker)
 
 ```bash
-cp .env.example .env    # uzupełnij PLEX_TOKEN i SMTP_*
+cp .env.example .env    # fill in PLEX_TOKEN, PLEX_URL and SMTP_*
 docker compose up -d --build
 ```
 
-Strona działa na `http://<ip-serwera>:8080`. Dane (SQLite) są w `./data`.
+The page is served at `http://<server-ip>:8080`. Data (SQLite) is stored in `./data`.
 
-Jeśli wystawiasz ją pod domeną przez reverse proxy, ustaw `APP_URL` na ten adres (używany przy powrocie z logowania Plex i w linkach w mailach).
+If you expose it under a domain through a reverse proxy, set `APP_URL` to that address (it is used for the return from the Plex sign-in and for links in emails).
 
-### Zmienne środowiskowe
+### Environment variables
 
-| Zmienna | Opis |
+| Variable | Description |
 | --- | --- |
-| `PLEX_TOKEN` | Token właściciela serwera (wymagany). Plex Web → dowolna pozycja → ⋯ → Uzyskaj informacje → Wyświetl XML → `X-Plex-Token` w adresie. |
-| `PLEX_URL` | Adres, pod którym kontener łączy się z Plexem (wymagany), np. `http://192.168.1.10:32400`. |
-| `PLEX_PUBLIC_URL` | Adres Plexa otwierany w przeglądarce po kliknięciu (domyślnie `PLEX_URL`). |
-| `PLEX_INSECURE_TLS` | `true`, jeśli `PLEX_URL` ma certyfikat self-signed. |
-| `APP_URL` | Publiczny adres tej strony. |
-| `SYNC_CRON`, `TZ` | Godzina nocnego odświeżania i strefa czasowa. |
-| `DEFAULT_LANGUAGE` | Język domyślny (`pl`). |
-| `TMDB_API_KEY` | Opcjonalnie: klucz TMDB (v3 lub token v4). Włącza oceny, filtr i sortowanie po ocenie. |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Wysyłka maili. Bez `SMTP_HOST` maile są wyłączone. |
+| `PLEX_TOKEN` | Server owner's token (required). Plex Web → any item → ⋯ → Get Info → View XML → `X-Plex-Token` in the URL. |
+| `PLEX_URL` | Address the container uses to reach Plex (required), e.g. `http://192.168.1.10:32400`. |
+| `PLEX_PUBLIC_URL` | Plex address opened in the browser on click (defaults to `PLEX_URL`). |
+| `PLEX_INSECURE_TLS` | `true` if `PLEX_URL` uses a self-signed certificate. |
+| `APP_URL` | Public address of this page. |
+| `SYNC_CRON`, `TZ` | Time of the nightly refresh and the time zone. |
+| `DEFAULT_LANGUAGE` | Default language (`en` in the example; `pl` if unset). |
+| `TMDB_API_KEY` | Optional: TMDB key (v3 key or v4 token). Enables ratings, the rating filter and sorting by rating. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Email delivery. Without `SMTP_HOST`, emails are disabled. |
 
-## Języki
+## Languages
 
-Każdy plik `locales/<kod>.json` to jeden język interfejsu i maili. Żeby dodać nowy, skopiuj `locales/en.json` jako np. `locales/de.json`, przetłumacz wartości i ustaw `_meta.name` (nazwa w ustawieniach) oraz `_meta.locale` (formatowanie dat, np. `de-DE`). Po przebudowie obrazu język pojawi się w ustawieniach.
+Each `locales/<code>.json` file is one language for the UI and emails. To add a language, copy `locales/en.json` to e.g. `locales/de.json`, translate the values and set `_meta.name` (the name shown in settings) and `_meta.locale` (date formatting, e.g. `de-DE`). After rebuilding the image, the language shows up in settings.
 
-Odmiana przez liczby używa przyrostków i18next: `_one`, `_few`, `_many`, `_other` (zależnie od języka).
+Plural forms use i18next suffixes: `_one`, `_few`, `_many`, `_other` (depending on the language).
 
-Opisy z programu TV są w języku dostawcy programu w Plexie.
+Descriptions from the TV guide stay in the language of the guide provider in Plex.
 
-## Rozwój
+## Development
 
 ```bash
 npm install
-npm run dev        # backend na :8080 (tsx watch) + Vite na :5173
+npm run dev        # backend on :8080 (tsx watch) + Vite on :5173
 npm run typecheck
 npm run build      # dist/web + dist/server
 ```
 
-Wymaga Node 22.13+ (używa wbudowanego `node:sqlite`).
+Requires Node 22.13+ (uses the built-in `node:sqlite`).
 
-## Jak to działa
+## How it works
 
-- `server/sync.ts` pobiera program z dostawcy EPG Plexa (`/tv.plex.providers.epg.cloud:*/sections/*/all`): filmy razem z emisjami, seriale i ich odcinki (`type=4`). Te same kanały z kilku list kanałów są łączone. Pobiera też bibliotekę (filmy, odcinki), żeby wiedzieć, co już masz, a przy ustawionym kluczu TMDB oceny.
-- Pozycje z programu dopasowuje do biblioteki po GUID, a gdy to się nie uda, po znormalizowanym tytule i roku (filmy) albo po tytule serialu i numerze sezonu/odcinka bądź tytule odcinka.
-- Zaplanowane nagrania (`/media/subscriptions`, `/media/subscriptions/scheduled`) są czytane na żywo z minutowym cache.
-- Link do Plexa ma postać `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/details?key=<klucz EPG>`.
+- `server/sync.ts` downloads the guide from the Plex EPG provider (`/tv.plex.providers.epg.cloud:*/sections/*/all`): movies together with their airings, shows and their episodes (`type=4`). The same channel listed in several lineups is merged into one. It also downloads the library (movies, episodes) to know what you already have and, when a TMDB key is set, the ratings.
+- Guide items are matched to the library by GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
+- Scheduled recordings (`/media/subscriptions`, `/media/subscriptions/scheduled`) are read live with a one-minute cache.
+- The Plex link has the form `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/details?key=<EPG key>`.
