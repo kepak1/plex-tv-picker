@@ -9,13 +9,15 @@ import { config } from './config.js';
 import { db, getMeta, now } from './db.js';
 import { endSession, loadUser, loginWithPlexToken, requireUser, startSession } from './auth.js';
 import { authUrl, checkPin, createPin, discoverSearch, machineIdentifier } from './plex.js';
-import { getChannels, getGenres, allItems, getItem, queryCatalog, reloadCatalog, type Query } from './catalog.js';
-import { isSyncing, refreshRatings, runSync } from './sync.js';
+import { getChannels, getCountries, getGenres, allItems, getItem, queryCatalog, reloadCatalog, type Query } from './catalog.js';
+import { isSyncing, refreshTmdb, runSync, updateRecommendations } from './sync.js';
 import { languages, localeOf, resolveLanguage, t } from './i18n.js';
 import { mailEnabled } from './mail.js';
 import { sendAlerts, sendTestEmail, wishMatches, type WishRow } from './notify.js';
 import { tmdbEnabled } from './tmdb.js';
+import { recommendationsFor } from './recommend.js';
 import { addIgnore, clearIgnores, listIgnores, removeIgnore } from './ignores.js';
+import { cleanConditions, compileConditions, countMatches, deleteRule, listRules, saveRule } from './rules.js';
 import { matchesWords, normalize } from './text.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
@@ -93,6 +95,8 @@ app.post('/api/auth/pin/:id', async (request, reply) => {
   if (!user) return reply.code(403).send({ status: 'denied' });
   startSession(reply, request, user.id);
   console.log(`[auth] ${user.username} signed in`);
+  // A new user would otherwise wait for the nightly refresh to get recommendations.
+  if (!recommendationsFor(user.id) && !isSyncing()) void updateRecommendations();
   return { status: 'ok' };
 });
 
@@ -117,17 +121,27 @@ await app.register(async (api) => {
       language: u.language,
       alertsEnabled: u.alerts_enabled === 1,
       digestEnabled: u.digest_enabled === 1,
+      recsEnabled: u.recs_enabled === 1,
     };
   });
 
   api.put('/api/settings', async (request) => {
-    const body = request.body as { language?: string | null; notifyEmail?: string | null; alertsEnabled?: boolean; digestEnabled?: boolean };
+    const body = request.body as {
+      language?: string | null;
+      notifyEmail?: string | null;
+      alertsEnabled?: boolean;
+      digestEnabled?: boolean;
+      recsEnabled?: boolean;
+    };
     const u = request.user!;
-    db.prepare('UPDATE users SET language = ?, notify_email = ?, alerts_enabled = ?, digest_enabled = ?, last_digest_at = COALESCE(last_digest_at, ?) WHERE id = ?').run(
+    db.prepare(
+      'UPDATE users SET language = ?, notify_email = ?, alerts_enabled = ?, digest_enabled = ?, recs_enabled = ?, last_digest_at = COALESCE(last_digest_at, ?) WHERE id = ?',
+    ).run(
       body.language !== undefined ? body.language && resolveLanguage(body.language) : u.language,
       body.notifyEmail !== undefined ? body.notifyEmail?.trim() || null : u.notify_email,
       body.alertsEnabled !== undefined ? Number(body.alertsEnabled) : u.alerts_enabled,
       body.digestEnabled !== undefined ? Number(body.digestEnabled) : u.digest_enabled,
+      body.recsEnabled !== undefined ? Number(body.recsEnabled) : u.recs_enabled,
       now(),
       u.id,
     );
@@ -139,18 +153,22 @@ await app.register(async (api) => {
     return { ok: true };
   });
 
-  api.get('/api/status', async () => ({
-    lastSyncAt: Number(getMeta('last_sync_at') ?? 0) || null,
-    lastSyncError: getMeta('last_sync_error') || null,
-    syncing: isSyncing(),
-  }));
+  api.get('/api/status', async (request) => {
+    const recs = recommendationsFor(request.user!.id);
+    return {
+      lastSyncAt: Number(getMeta('last_sync_at') ?? 0) || null,
+      lastSyncError: getMeta('last_sync_error') || null,
+      syncing: isSyncing(),
+      recommendations: recs ? { watched: recs.watched, count: recs.items.size } : null,
+    };
+  });
 
   api.post('/api/sync', async () => {
     runSync().catch(() => {});
     return { syncing: true };
   });
 
-  api.get('/api/filters', async () => ({ genres: getGenres(), channels: getChannels() }));
+  api.get('/api/filters', async () => ({ genres: getGenres(), channels: getChannels(), countries: tmdbEnabled() ? getCountries() : [] }));
 
   // Resizes posters through the Plex photo transcoder (originals are up to 1920px wide).
   api.get('/api/img', async (request, reply) => {
@@ -178,6 +196,7 @@ await app.register(async (api) => {
       type: q.type === 'movie' || q.type === 'show' ? q.type : undefined,
       q: q.q || undefined,
       genres: list(q.genres),
+      countries: tmdbEnabled() ? list(q.countries) : undefined,
       channels: list(q.channels),
       from: num(q.from),
       to: num(q.to),
@@ -187,7 +206,9 @@ await app.register(async (api) => {
       hideScheduled: bool(q.hideScheduled),
       hideLibrary: bool(q.hideLibrary),
       showIgnored: bool(q.showIgnored),
+      only: bool(q.recommended) ? new Set(recommendationsFor(request.user!.id)?.items.keys()) : undefined,
       sort: q.sort as Query['sort'],
+      dir: q.dir === 'asc' || q.dir === 'desc' ? q.dir : undefined,
       offset: num(q.offset),
       limit: num(q.limit),
     };
@@ -239,6 +260,44 @@ await app.register(async (api) => {
     const removed = clearIgnores(request.user!.id, scope === 'title' || scope === 'episode' ? scope : undefined);
     console.log(`[ignores] ${request.user!.username} cleared ${removed} hidden entries${scope ? ` (${scope})` : ''}`);
     return { removed };
+  });
+
+  // ----- Auto-hide rules -----
+
+  api.get('/api/rules', async (request) => {
+    const items = [...allItems()];
+    return listRules(request.user!.id).map((r) => ({ ...r, matchCount: countMatches(compileConditions(r.conditions), items) }));
+  });
+
+  // Live match count while a rule is being edited.
+  api.post('/api/rules/preview', async (request) => {
+    const conditions = cleanConditions((request.body as { conditions?: unknown } | undefined)?.conditions);
+    return { matchCount: conditions ? countMatches(compileConditions(conditions), allItems()) : 0 };
+  });
+
+  const ruleBody = (body: unknown) => {
+    const b = (body ?? {}) as { name?: unknown; enabled?: unknown; conditions?: unknown };
+    const name = typeof b.name === 'string' ? b.name.trim().slice(0, 100) : '';
+    const conditions = cleanConditions(b.conditions);
+    return name && conditions ? { name, enabled: b.enabled !== false, conditions } : null;
+  };
+
+  api.post('/api/rules', async (request, reply) => {
+    const rule = ruleBody(request.body);
+    if (!rule) return reply.code(400).send({ error: 'A rule needs a name and at least one condition' });
+    return { id: saveRule(request.user!.id, rule) };
+  });
+
+  api.put('/api/rules/:id', async (request, reply) => {
+    const rule = ruleBody(request.body);
+    if (!rule) return reply.code(400).send({ error: 'A rule needs a name and at least one condition' });
+    saveRule(request.user!.id, { ...rule, id: Number((request.params as { id: string }).id) });
+    return { ok: true };
+  });
+
+  api.delete('/api/rules/:id', async (request) => {
+    deleteRule(request.user!.id, Number((request.params as { id: string }).id));
+    return { ok: true };
   });
 
   // ----- Wishlist -----
@@ -308,8 +367,9 @@ app.setErrorHandler((err: Error & { statusCode?: number }, request, reply) => {
 reloadCatalog();
 cron.schedule(config.syncCron, () => runSync().catch(() => {}), { timezone: config.timezone });
 if (!getMeta('last_sync_at')) runSync({ notify: false }).catch(() => {});
-// Ratings normally come with the nightly sync; fetch missing ones now so a newly added TMDB key works right away.
-else if (tmdbEnabled()) void refreshRatings();
+// TMDB details normally come with the nightly sync; fetch missing ones now so a new key (or upgrade) works right away.
+else if (tmdbEnabled()) void refreshTmdb();
+else void updateRecommendations();
 
 await app.listen({ host: '0.0.0.0', port: config.port });
 console.log(`RecPick ${config.version} listening on :${config.port} (sync: "${config.syncCron}" ${config.timezone})`);

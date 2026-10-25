@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Ignore } from '../api';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { api, type Ignore, type RuleConditions } from '../api';
+import { Rules } from '../components/Rules';
 import { formatDate, img } from '../format';
 
 const PAGE = 100;
@@ -12,6 +14,28 @@ interface IgnoreList {
 }
 
 export function Ignored() {
+  const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const draft = (useLocation().state as { draft?: RuleConditions } | null)?.draft;
+  const tab = params.get('tab') === 'rules' ? 'rules' : 'items';
+
+  return (
+    <div className="page narrow">
+      <h1>{t('ignored.title')}</h1>
+      <div className="segmented tabs">
+        <button className={tab === 'items' ? 'on' : ''} onClick={() => setParams({})}>
+          {t('ignored.tabItems')}
+        </button>
+        <button className={tab === 'rules' ? 'on' : ''} onClick={() => setParams({ tab: 'rules' })}>
+          {t('ignored.tabRules')}
+        </button>
+      </div>
+      {tab === 'rules' ? <Rules draft={draft} /> : <HiddenItems />}
+    </div>
+  );
+}
+
+function HiddenItems() {
   const { t } = useTranslation();
   const [data, setData] = useState<IgnoreList | null>(null);
   const [scope, setScope] = useState<'' | 'title' | 'episode'>('');
@@ -78,8 +102,7 @@ export function Ignored() {
   ];
 
   return (
-    <div className="page narrow">
-      <h1>{t('ignored.title')}</h1>
+    <>
       <p className="muted">{t('ignored.text')}</p>
 
       {message && <p className="ok-text">{message}</p>}
@@ -130,6 +153,6 @@ export function Ignored() {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }

@@ -40,6 +40,7 @@ export interface Me {
   language: string | null;
   alertsEnabled: boolean;
   digestEnabled: boolean;
+  recsEnabled: boolean;
 }
 
 export interface Airing {
@@ -61,6 +62,7 @@ export interface Airing {
   scheduled: boolean;
   inLibrary: boolean;
   ignored: boolean;
+  hiddenBy: string | null;
 }
 
 export interface Item {
@@ -76,8 +78,10 @@ export interface Item {
   epgKey: string;
   firstSeenAt: number;
   rating: number | null;
+  countries: string[] | null;
   subscribed: boolean;
   ignored: boolean;
+  hiddenBy: string | null;
   isNew: boolean;
   airings: Airing[];
 }
@@ -89,10 +93,18 @@ export interface Channel {
   thumb: string | null;
 }
 
+export interface FilterOptions {
+  genres: string[];
+  channels: Channel[];
+  countries: string[];
+}
+
 export interface Status {
   lastSyncAt: number | null;
   lastSyncError: string | null;
   syncing: boolean;
+  /** Null until computed after the first refresh. */
+  recommendations: { watched: number; count: number } | null;
 }
 
 export interface Wish {
@@ -124,4 +136,23 @@ export interface Ignore {
   episode_label: string | null;
   thumb: string | null;
   created_at: number;
+}
+
+export interface RuleConditions {
+  type?: 'movie' | 'show';
+  genres?: string[];
+  channels?: string[];
+  countries?: string[];
+  yearMin?: number;
+  yearMax?: number;
+  ratingBelow?: number;
+}
+
+export interface Rule {
+  id: number;
+  name: string;
+  enabled: boolean;
+  conditions: RuleConditions;
+  createdAt: number;
+  matchCount: number;
 }

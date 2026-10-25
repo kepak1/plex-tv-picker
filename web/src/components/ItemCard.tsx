@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Airing, Item } from '../api';
 import { useApp } from '../app';
-import { channelName, episodeLabel, formatAiring, img } from '../format';
+import { channelName, countryName, episodeLabel, flag, formatAiring, img } from '../format';
 
 export interface ItemActions {
   ignoreTitle: (item: Item) => void;
@@ -24,7 +24,7 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
   const googleLink = `https://www.google.com/search?q=${encodeURIComponent(googleQuery)}`;
 
   return (
-    <article className={`card ${view}${item.ignored ? ' dimmed' : ''}`}>
+    <article className={`card ${view}${item.ignored || item.hiddenBy ? ' dimmed' : ''}`}>
       <a className="poster" href={mainLink} target="_blank" rel="noreferrer">
         {item.thumb ? <img src={img(item.thumb, view === 'grid' ? 360 : 280)} alt="" loading="lazy" /> : <div className="poster-empty">{item.title}</div>}
         <div className="poster-badges">
@@ -43,6 +43,12 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
           <span className="badge type">{t(`item.${item.type}`)}</span>
           {item.subscribed && <span className="badge ok">{t('item.subscribed')}</span>}
           {item.ignored && <span className="badge">{t('item.ignoredBadge')}</span>}
+          {item.hiddenBy && <span className="badge">{t('item.hiddenByRule', { name: item.hiddenBy })}</span>}
+          {(item.countries ?? []).slice(0, view === 'grid' ? 1 : 3).map((c) => (
+            <span key={c} className="country" title={countryName(c)}>
+              {flag(c)} {view === 'list' && countryName(c)}
+            </span>
+          ))}
           {item.genres.slice(0, view === 'grid' ? 2 : 6).map((g) => (
             <span key={g} className="genre">{g}</span>
           ))}
@@ -80,7 +86,7 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
         {showAirings && (
           <ul className="airings">
             {item.airings.map((a) => (
-              <li key={a.id} className={a.ignored ? 'dimmed' : ''}>
+              <li key={a.id} className={a.ignored || a.hiddenBy ? 'dimmed' : ''}>
                 <a href={plexLink(a.epgKey)} target="_blank" rel="noreferrer" className="when">
                   {formatAiring(a.beginsAt)}
                 </a>
@@ -97,6 +103,7 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
                   {a.premiere && <span className="badge new">{t('item.premiere')}</span>}
                   {a.scheduled && <span className="badge ok">{t('item.scheduled')}</span>}
                   {a.inLibrary && <span className="badge lib">{t('item.inLibrary')}</span>}
+                  {a.hiddenBy && <span className="badge">{t('item.hiddenByRule', { name: a.hiddenBy })}</span>}
                 </span>
                 {a.episodeGuid &&
                   (a.ignored ? (

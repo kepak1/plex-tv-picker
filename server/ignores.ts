@@ -1,12 +1,11 @@
-import { db, now, transaction } from './db.js';
+import { addColumn, db, now, transaction } from './db.js';
 import { normalize } from './text.js';
+import { activeRules, type CompiledRule } from './rules.js';
 
 // Hidden lists are expected to grow into the thousands, so they are indexed, paged and searched
 // in SQL, and the per-user lookup sets used by every catalog request are cached in memory.
 
-const columns = db.prepare('PRAGMA table_info(ignores)').all() as { name: string }[];
-if (!columns.some((c) => c.name === 'title_norm')) {
-  db.exec("ALTER TABLE ignores ADD COLUMN title_norm TEXT NOT NULL DEFAULT ''");
+if (addColumn('ignores', 'title_norm', "TEXT NOT NULL DEFAULT ''")) {
   const rows = db.prepare('SELECT id, title FROM ignores').all() as { id: number; title: string }[];
   const update = db.prepare('UPDATE ignores SET title_norm = ? WHERE id = ?');
   transaction(() => rows.forEach((r) => update.run(normalize(r.title), r.id)));
@@ -21,10 +20,13 @@ export type IgnoreScope = 'title' | 'episode';
 export interface UserIgnores {
   titles: Set<string>;
   episodes: Set<string>;
+  /** Enabled auto-hide rules. */
+  rules: CompiledRule[];
 }
 
-const cache = new Map<number, UserIgnores>();
+const cache = new Map<number, Omit<UserIgnores, 'rules'>>();
 
+/** Everything the user has hidden: titles and episodes by hand, plus auto-hide rules. */
 export function userIgnores(userId: number): UserIgnores {
   let sets = cache.get(userId);
   if (!sets) {
@@ -40,7 +42,7 @@ export function userIgnores(userId: number): UserIgnores {
     }
     cache.set(userId, sets);
   }
-  return sets;
+  return { ...sets, rules: activeRules(userId) };
 }
 
 export function addIgnore(

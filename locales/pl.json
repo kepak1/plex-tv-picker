@@ -48,13 +48,20 @@
     "sort": "Sortuj",
     "sortStart": "Najbliższa emisja",
     "sortTitle": "Tytuł",
-    "sortYear": "Rok (najnowsze)",
+    "sortYear": "Rok",
     "sortRating": "Ocena",
     "sortAdded": "Nowe w programie",
     "reset": "Wyczyść filtry",
     "selected": "Wybrano: {{count}}",
     "more": "Więcej filtrów",
-    "less": "Mniej filtrów"
+    "less": "Mniej filtrów",
+    "ascending": "Rosnąco (kliknij, by odwrócić)",
+    "descending": "Malejąco (kliknij, by odwrócić)",
+    "countries": "Kraje",
+    "anyCountry": "Dowolny kraj",
+    "unknownCountry": "Nieznany kraj",
+    "recommended": "Tylko polecane",
+    "recommendedHint": "Wybrane dla Ciebie na podstawie historii oglądania w Plex"
   },
   "view": {
     "list": "Lista",
@@ -72,7 +79,9 @@
     "neverSynced": "Program jeszcze nie pobrany",
     "refresh": "Odśwież teraz",
     "refreshing": "Odświeżam…",
-    "syncError": "Ostatnie odświeżenie nie powiodło się: {{error}}"
+    "syncError": "Ostatnie odświeżenie nie powiodło się: {{error}}",
+    "noRecommendations": "Brak poleceń: Twoje konto nie ma jeszcze historii oglądania na tym serwerze Plex.",
+    "recommendationsPending": "Polecenia są przygotowywane na podstawie historii oglądania. Zajrzyj za kilka minut."
   },
   "item": {
     "movie": "Film",
@@ -105,7 +114,8 @@
     "episode": "O{{episode}}",
     "readMore": "Więcej",
     "readLess": "Mniej",
-    "rating": "Ocena TMDB"
+    "rating": "Ocena TMDB",
+    "hiddenByRule": "Reguła: {{name}}"
   },
   "ignored": {
     "title": "Pominięte",
@@ -139,7 +149,9 @@
     "found_one": "Znaleziono {{count}} pozycję",
     "found_few": "Znaleziono {{count}} pozycje",
     "found_many": "Znaleziono {{count}} pozycji",
-    "found_other": "Znaleziono {{count}} pozycji"
+    "found_other": "Znaleziono {{count}} pozycji",
+    "tabItems": "Tytuły i odcinki",
+    "tabRules": "Reguły"
   },
   "wishlist": {
     "title": "Lista życzeń",
@@ -170,7 +182,9 @@
     "saved": "Zapisano",
     "testEmail": "Wyślij testowy mail",
     "testSent": "Wysłano testowy mail",
-    "smtpMissing": "Wysyłka maili nie jest skonfigurowana (brak SMTP_HOST)."
+    "smtpMissing": "Wysyłka maili nie jest skonfigurowana (brak SMTP_HOST).",
+    "recs": "Polecane w dziennym mailu",
+    "recsHint": "20 najlepszych tytułów do nagrania z całego programu, wybranych na podstawie historii oglądania w Plex (bez ukrytych, zaplanowanych i tych, które masz)."
   },
   "time": {
     "today": "Dziś",
@@ -193,10 +207,50 @@
     "openInPlex": "Otwórz w Plex, żeby nagrać",
     "testSubject": "RecPick – test",
     "testBody": "Ten mail potwierdza, że powiadomienia działają.",
-    "footer": "Ustawienia powiadomień zmienisz w RecPick."
+    "footer": "Ustawienia powiadomień zmienisz w RecPick.",
+    "recsHeading": "Polecane do nagrania",
+    "recsIntro": "Wybrane z całego programu na podstawie tego, co oglądasz w Plex:",
+    "recsSubject_one": "{{count}} tytuł polecany do nagrania",
+    "recsSubject_few": "{{count}} tytuły polecane do nagrania",
+    "recsSubject_many": "{{count}} tytułów polecanych do nagrania",
+    "recsSubject_other": "{{count}} tytułu polecanego do nagrania",
+    "because": "Podobne do obejrzanego: {{title}}"
   },
   "support": {
     "text": "Podoba Ci się RecPick? Możesz postawić mi kawę.",
     "button": "Wesprzyj na Ko-fi"
+  },
+  "rules": {
+    "text": "Reguła ukrywa wszystko, co spełnia wszystkie jej warunki: na liście, w alertach, w dziennym mailu i w poleceniach. W obrębie jednego warunku (np. gatunków) wystarczy dowolna z wybranych wartości.",
+    "add": "Nowa reguła",
+    "name": "Nazwa",
+    "defaultName": "Moja reguła",
+    "type": "Typ",
+    "anyGenre": "Dowolny gatunek",
+    "anyCountry": "Dowolny kraj",
+    "anyChannel": "Dowolny kanał",
+    "ratingBelow": "Ocena TMDB poniżej",
+    "channelHint": "Z kanałami ukrywane są tylko emisje na tych kanałach. Tytuł znika, gdy nie zostanie mu żadna emisja na innych kanałach.",
+    "missingHint": "Tytuły bez roku, oceny lub kraju nigdy nie spełniają tych warunków. Wybierz „Nieznany kraj”, by ukryć tytuły, których TMDB nie zna.",
+    "needCondition": "Wybierz co najmniej jeden warunek.",
+    "matches_one": "Ukrywa {{count}} tytuł w obecnym programie",
+    "matches_few": "Ukrywa {{count}} tytuły w obecnym programie",
+    "matches_many": "Ukrywa {{count}} tytułów w obecnym programie",
+    "matches_other": "Ukrywa {{count}} tytułu w obecnym programie",
+    "disabled": "Wyłączona",
+    "enable": "Włącz",
+    "disable": "Wyłącz",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "confirmDelete": "Usunąć regułę „{{name}}”?",
+    "empty": "Nie masz jeszcze reguł.",
+    "yearsBetween": "{{from}}-{{to}}",
+    "yearsFrom": "od {{from}}",
+    "yearsTo": "do {{to}}",
+    "ratingBelowShort": "ocena < {{rating}}",
+    "onChannels": "na {{channels}}",
+    "fromFilters": "Zapisz filtry jako regułę",
+    "fromFiltersHint": "Tworzy regułę, która ukrywa to, co pokazują te filtry",
+    "missingHintNoTmdb": "Tytuły bez roku nigdy nie spełniają warunku roku."
   }
 }

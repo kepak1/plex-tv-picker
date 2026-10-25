@@ -1,9 +1,10 @@
 import { db, getMeta, now, setMeta, transaction } from './db.js';
 import { epgProviders, librarySections, serverGet, serverGetAll, type PlexMetadata } from './plex.js';
 import { normalize } from './text.js';
-import { fetchMissingRatings } from './tmdb.js';
+import { fetchMissingDetails } from './tmdb.js';
 import { reloadCatalog } from './catalog.js';
 import { sendAlerts, sendDigests } from './notify.js';
+import { computeRecommendations } from './recommend.js';
 
 interface Section {
   key: string;
@@ -27,17 +28,27 @@ export function runSync(opts: { notify?: boolean } = {}): Promise<void> {
   return running;
 }
 
-/** Fetches ratings for titles that don't have one yet, e.g. right after a TMDB key was added. */
-export function refreshRatings(): Promise<void> {
+/** Fetches TMDB details for titles that have none yet, e.g. right after a TMDB key was added or an upgrade. */
+export function refreshTmdb(): Promise<void> {
   if (!running) {
-    running = fetchMissingRatings()
+    running = fetchMissingDetails()
       .then(() => reloadCatalog())
+      .then(() => updateRecommendations())
       .catch((err) => console.error('[tmdb] failed', err))
       .finally(() => {
         running = null;
       });
   }
   return running;
+}
+
+/** Recommendations are a bonus: a failure (e.g. history unavailable) must not fail the sync. */
+export async function updateRecommendations(): Promise<void> {
+  try {
+    await computeRecommendations();
+  } catch (err) {
+    console.error('[recommend] failed', err);
+  }
 }
 
 async function doSync(notify: boolean): Promise<void> {
@@ -47,8 +58,9 @@ async function doSync(notify: boolean): Promise<void> {
     await syncGuide();
     await syncLibrary();
     reloadCatalog();
-    await fetchMissingRatings();
+    await fetchMissingDetails();
     reloadCatalog();
+    await updateRecommendations();
     setMeta('last_sync_at', String(now()));
     setMeta('last_sync_error', '');
     console.log(`[sync] guide and library done in ${Math.round((Date.now() - started) / 1000)}s`);

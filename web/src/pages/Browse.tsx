@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Airing, type Channel, type Item, type Status } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { api, type Airing, type FilterOptions, type Item, type RuleConditions, type Status } from '../api';
 import { useApp } from '../app';
 import { ItemCard, type ItemActions } from '../components/ItemCard';
 import { MultiSelect } from '../components/MultiSelect';
-import { formatDate, whenRange, type When } from '../format';
+import { countryOptions, formatDate, whenRange, type When } from '../format';
 
 interface Filters {
   type: '' | 'movie' | 'show';
   q: string;
   when: When;
   genres: string[];
+  countries: string[];
   channels: string[];
   yearMin: string;
   yearMax: string;
@@ -18,14 +20,22 @@ interface Filters {
   hideScheduled: boolean;
   hideLibrary: boolean;
   showIgnored: boolean;
-  sort: 'start' | 'title' | 'year' | 'rating' | 'added';
+  recommended: boolean;
+  sort: SortKey;
+  dir: 'asc' | 'desc';
 }
+
+type SortKey = 'start' | 'title' | 'year' | 'rating' | 'added';
+
+// Same as NATURAL_DIR in server/catalog.ts: picking a sort starts in its natural direction.
+const NATURAL_DIR: Record<SortKey, 'asc' | 'desc'> = { start: 'asc', title: 'asc', year: 'desc', rating: 'desc', added: 'desc' };
 
 const DEFAULTS: Filters = {
   type: 'movie',
   q: '',
   when: 'all',
   genres: [],
+  countries: [],
   channels: [],
   yearMin: '',
   yearMax: '',
@@ -33,7 +43,9 @@ const DEFAULTS: Filters = {
   hideScheduled: true,
   hideLibrary: true,
   showIgnored: false,
+  recommended: false,
   sort: 'start',
+  dir: 'asc',
 };
 const PAGE = 48;
 const AUTO_FILL = 12;
@@ -59,13 +71,18 @@ function store(key: string, value: unknown) {
 export function Browse() {
   const { t } = useTranslation();
   const { config, reloadWishes } = useApp();
-  const [filters, setFilters] = useState<Filters>(() => stored(STORAGE_KEY, DEFAULTS));
+  const navigate = useNavigate();
+  const [filters, setFilters] = useState<Filters>(() => {
+    const saved = stored<Partial<Filters>>(STORAGE_KEY, {});
+    // Filters saved before sort direction existed start in the sort's natural direction.
+    return { ...DEFAULTS, ...saved, dir: saved.dir ?? NATURAL_DIR[saved.sort ?? DEFAULTS.sort] };
+  });
   const [view, setView] = useState<'list' | 'grid'>(() => stored('ptp_view', { v: 'list' as 'list' | 'grid' }).v);
   const [moreOpen, setMoreOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [options, setOptions] = useState<{ genres: string[]; channels: Channel[] }>({ genres: [], channels: [] });
+  const [options, setOptions] = useState<FilterOptions>({ genres: [], channels: [], countries: [] });
   const [status, setStatus] = useState<Status | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [debouncedQ, setDebouncedQ] = useState(filters.q);
@@ -89,7 +106,7 @@ export function Browse() {
   }, []);
 
   useEffect(() => {
-    void api<{ genres: string[]; channels: Channel[] }>('/api/filters').then(setOptions);
+    void api<FilterOptions>('/api/filters').then(setOptions);
     void loadStatus();
   }, [loadStatus]);
 
@@ -100,6 +117,7 @@ export function Browse() {
       if (filters.type) p.set('type', filters.type);
       if (debouncedQ) p.set('q', debouncedQ);
       if (filters.genres.length) p.set('genres', filters.genres.join(','));
+      if (filters.countries.length && config.tmdb) p.set('countries', filters.countries.join(','));
       if (filters.channels.length) p.set('channels', filters.channels.join(','));
       if (range.from) p.set('from', String(range.from));
       if (range.to) p.set('to', String(range.to));
@@ -109,7 +127,9 @@ export function Browse() {
       if (filters.hideScheduled) p.set('hideScheduled', '1');
       if (filters.hideLibrary) p.set('hideLibrary', '1');
       if (filters.showIgnored) p.set('showIgnored', '1');
+      if (filters.recommended) p.set('recommended', '1');
       p.set('sort', filters.sort);
+      p.set('dir', filters.dir);
       p.set('offset', String(offset));
       p.set('limit', String(PAGE));
       return p.toString();
@@ -154,7 +174,7 @@ export function Browse() {
       const s = await loadStatus();
       if (s.syncing) setTimeout(poll, 3000);
       else {
-        void api<{ genres: string[]; channels: Channel[] }>('/api/filters').then(setOptions);
+        void api<FilterOptions>('/api/filters').then(setOptions);
         void load(false);
       }
     };
@@ -207,9 +227,21 @@ export function Browse() {
     },
   };
 
+  // Opens the rule editor prefilled with the filters; the rule then hides what they show.
+  const saveAsRule = () => {
+    const draft: RuleConditions = {};
+    if (filters.type) draft.type = filters.type;
+    if (filters.genres.length) draft.genres = filters.genres;
+    if (filters.channels.length) draft.channels = filters.channels;
+    if (filters.countries.length && config.tmdb) draft.countries = filters.countries;
+    if (filters.yearMin) draft.yearMin = Number(filters.yearMin);
+    if (filters.yearMax) draft.yearMax = Number(filters.yearMax);
+    navigate('/ignored?tab=rules', { state: { draft } });
+  };
+
   const whenOptions: When[] = ['today', 'tomorrow', 'next3', 'next7', 'all'];
   const advancedActive =
-    filters.genres.length + filters.channels.length > 0 || !!filters.yearMin || !!filters.yearMax || !!filters.ratingMin;
+    filters.genres.length + filters.channels.length + (config.tmdb ? filters.countries.length : 0) > 0 || !!filters.yearMin || !!filters.yearMax || !!filters.ratingMin;
 
   return (
     <div className="browse">
@@ -240,6 +272,10 @@ export function Browse() {
             <input type="checkbox" checked={filters.hideLibrary} onChange={(e) => set('hideLibrary', e.target.checked)} />
             {t('filters.hideLibrary')}
           </label>
+          <label className="toggle" title={t('filters.recommendedHint')}>
+            <input type="checkbox" checked={filters.recommended} onChange={(e) => set('recommended', e.target.checked)} />
+            {t('filters.recommended')}
+          </label>
           <label className="toggle">
             <input type="checkbox" checked={filters.showIgnored} onChange={(e) => set('showIgnored', e.target.checked)} />
             {t('filters.showIgnored')}
@@ -250,7 +286,13 @@ export function Browse() {
           <span className="spacer" />
           <label className="inline">
             {t('filters.sort')}
-            <select value={filters.sort} onChange={(e) => set('sort', e.target.value as Filters['sort'])}>
+            <select
+              value={filters.sort}
+              onChange={(e) => {
+                const sort = e.target.value as SortKey;
+                setFilters((f) => ({ ...f, sort, dir: NATURAL_DIR[sort] }));
+              }}
+            >
               <option value="start">{t('filters.sortStart')}</option>
               <option value="added">{t('filters.sortAdded')}</option>
               <option value="title">{t('filters.sortTitle')}</option>
@@ -258,6 +300,14 @@ export function Browse() {
               {config.tmdb && <option value="rating">{t('filters.sortRating')}</option>}
             </select>
           </label>
+          <button
+            className="icon"
+            onClick={() => set('dir', filters.dir === 'asc' ? 'desc' : 'asc')}
+            title={t(filters.dir === 'asc' ? 'filters.ascending' : 'filters.descending')}
+            aria-label={t(filters.dir === 'asc' ? 'filters.ascending' : 'filters.descending')}
+          >
+            {filters.dir === 'asc' ? '↑' : '↓'}
+          </button>
           <div className="segmented small">
             <button className={view === 'list' ? 'on' : ''} onClick={() => setView('list')} title={t('view.list')}>☰</button>
             <button className={view === 'grid' ? 'on' : ''} onClick={() => setView('grid')} title={t('view.grid')}>▦</button>
@@ -272,6 +322,15 @@ export function Browse() {
               value={filters.genres}
               onChange={(v) => set('genres', v)}
             />
+            {config.tmdb && (
+              <MultiSelect
+                label={t('filters.countries')}
+                emptyLabel={t('filters.anyCountry')}
+                options={countryOptions(options.countries, t('filters.unknownCountry'))}
+                value={filters.countries}
+                onChange={(v) => set('countries', v)}
+              />
+            )}
             <MultiSelect
               label={t('filters.channels')}
               emptyLabel={t('filters.anyChannel')}
@@ -295,6 +354,9 @@ export function Browse() {
             <button className="link" onClick={() => setFilters({ ...DEFAULTS, type: filters.type })}>
               {t('filters.reset')}
             </button>
+            <button className="link" onClick={saveAsRule} title={t('rules.fromFiltersHint')}>
+              {t('rules.fromFilters')}
+            </button>
           </div>
         )}
       </section>
@@ -311,7 +373,15 @@ export function Browse() {
         </button>
       </div>
 
-      {!loading && items.length === 0 && <p className="empty">{status?.lastSyncAt ? t('browse.empty') : t('browse.noData')}</p>}
+      {!loading && items.length === 0 && (
+        <p className="empty">
+          {!status?.lastSyncAt
+            ? t('browse.noData')
+            : filters.recommended && !status.recommendations?.count
+              ? t(status.recommendations ? 'browse.noRecommendations' : 'browse.recommendationsPending')
+              : t('browse.empty')}
+        </p>
+      )}
 
       <div className={`items ${view}`}>
         {items.map((item) => (
