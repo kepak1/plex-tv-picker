@@ -14,11 +14,13 @@ Plex's *Live TV → Browse* shows the same titles you already skipped over and o
 ## Features
 
 - **The whole guide in one list**: movies and shows with posters, full descriptions, genres and every airing (channel, time, season/episode). List or grid view, works on phones.
-- **Filters**: movies/shows, title search, genre, channel, today/tomorrow/3/7 days, year, TMDB rating (optional), sorting by next airing, newest in guide, title, year or rating.
+- **Filters**: movies/shows, title search, genre, channel, country (with TMDB), today/tomorrow/3/7 days, year, TMDB rating (optional). Sort by next airing, newest in guide, title, year or rating, in either direction.
 - **Hide scheduled** and **hide what I already have** (checks your Plex library, episode by episode for shows).
 - **Hide forever**: a whole movie/show or a single episode. Everything hidden can be searched, restored or cleared on the *Hidden* page.
+- **Auto-hide rules**: hide everything that matches a set of conditions (type, genres, channels, countries, years, TMDB rating below a threshold), e.g. "horror movies" or "everything on a shopping channel". Rules with channels hide only the airings on those channels. Create them from scratch or from the current filters; each one can be switched off and shows how many titles it hides. Rules also apply to emails.
+- **Recommendations** from your Plex watch history: an *Only recommended* filter and an optional section with the 20 best picks in the daily email. With TMDB they combine "similar to what you watched" with your favourite genres and countries; without it, only genres are used.
 - **Wishlist with email alerts**: pick a title from suggestions (the guide and Plex's catalogue) or add a free-text phrase. You get an email as soon as it appears in the guide; each airing or episode is reported once. For shows, only episodes you don't have and haven't scheduled are reported.
-- **Optional daily digest** with everything new in the guide.
+- **Optional daily email** with everything new in the guide and/or your recommendations.
 - **Open in Plex**: every title and airing links straight to its Plex Web page with the *Record* button.
 - **Search Google** button for every title.
 - **Sign in with Plex**: only users of your Plex server get in, and each user has their own hidden list, wishlist, email and language.
@@ -78,7 +80,7 @@ The token stays on your server: the app uses it to read the guide, your library 
 | `SYNC_CRON` | When to refresh the guide (cron syntax, default `0 3 * * *`). |
 | `TZ` | Time zone for the refresh and email times, e.g. `Europe/London` (default `UTC`). |
 | `DEFAULT_LANGUAGE` | Language for new users and emails, `en` or `pl` (default `en`). Each user can change it. |
-| `TMDB_API_KEY` | Optional [TMDB](https://www.themoviedb.org/settings/api) key (v3 key or v4 token). Enables ratings, the rating filter and sorting by rating. |
+| `TMDB_API_KEY` | Optional [TMDB](https://www.themoviedb.org/settings/api) key (v3 key or v4 token). Enables ratings, countries, their filters and rule conditions, sorting by rating and better recommendations. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Email delivery. Without `SMTP_HOST` emails are turned off. Use `SMTP_SECURE=true` for port 465. |
 | `PUID`, `PGID` | User and group the app runs as inside the container (default `1000`). The data folder is made writable for them on start. |
 
@@ -111,9 +113,10 @@ Stack: Node.js + Fastify + SQLite (`node:sqlite`) on the backend, React + Vite +
 
 ## How it works
 
-- Every night the app downloads the guide from your server's Plex EPG provider (`/tv.plex.providers.epg.cloud:*/sections/*/all`): movies with their airings, shows and all upcoming episodes. The same channel listed in several lineups is merged. It also reads your library to know what you already have and, if a TMDB key is set, fetches ratings.
+- Every night the app downloads the guide from your server's Plex EPG provider (`/tv.plex.providers.epg.cloud:*/sections/*/all`): movies with their airings, shows and all upcoming episodes. The same channel listed in several lineups is merged. It also reads your library to know what you already have and, if a TMDB key is set, fetches ratings, countries and genres.
 - Guide items are matched to your library by Plex GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
 - Your recording rules and scheduled recordings are read live from Plex (cached for a minute), so *Hide scheduled* is always current.
+- Recommendations read the server's watch history (`/status/sessions/history/all`) for each signed-in user, then score every guide title: TMDB's recommendations for each watched title, plus a genre and country profile (rarer genres count more, recent viewing counts more). Titles you watched, have or hid are left out. They are recalculated after every refresh.
 - Links open `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/provider/<EPG provider>/details?key=<item>`, the same page you get from Plex's own guide.
 
 ## Privacy

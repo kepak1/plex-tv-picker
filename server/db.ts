@@ -120,6 +120,17 @@ CREATE TABLE IF NOT EXISTS notified (
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
 `);
 
+/** Adds a column to an existing table if it is missing (schema migrations for older databases). */
+export function addColumn(table: string, column: string, definition: string): boolean {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (columns.some((c) => c.name === column)) return false;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+  return true;
+}
+
+// Columns added after the first release.
+addColumn('users', 'recs_enabled', 'INTEGER NOT NULL DEFAULT 0');
+
 export function getMeta(key: string): string | undefined {
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;
   return row?.value;

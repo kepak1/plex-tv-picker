@@ -10,11 +10,12 @@ export function Settings() {
   const [notifyEmail, setNotifyEmail] = useState(me.notifyEmail ?? '');
   const [alertsEnabled, setAlertsEnabled] = useState(me.alertsEnabled);
   const [digestEnabled, setDigestEnabled] = useState(me.digestEnabled);
+  const [recsEnabled, setRecsEnabled] = useState(me.recsEnabled);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   const save = async () => {
     try {
-      await api('/api/settings', { method: 'PUT', json: { language, notifyEmail, alertsEnabled, digestEnabled } });
+      await api('/api/settings', { method: 'PUT', json: { language, notifyEmail, alertsEnabled, digestEnabled, recsEnabled } });
       await i18n.changeLanguage(language);
       await reloadMe();
       setMessage({ text: t('settings.saved', { lng: language }) });
@@ -64,6 +65,13 @@ export function Settings() {
           <span>
             <b>{t('settings.digest')}</b>
             <span className="muted small">{t('settings.digestHint')}</span>
+          </span>
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={recsEnabled} onChange={(e) => setRecsEnabled(e.target.checked)} />
+          <span>
+            <b>{t('settings.recs')}</b>
+            <span className="muted small">{t('settings.recsHint')}</span>
           </span>
         </label>
         {!config.mail && <p className="error">{t('settings.smtpMissing')}</p>}

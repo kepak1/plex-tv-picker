@@ -50,6 +50,7 @@ button.link { background: none; border: none; padding: 4px 6px; color: var(--mut
 button.link:hover { color: var(--text); background: none; }
 button.link.active { color: var(--accent-text); }
 button.small { font-size: 13px; }
+button.icon { min-width: 34px; justify-content: center; padding: 6px 8px; }
 input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 input[type='checkbox'] { accent-color: var(--accent); width: 16px; height: 16px; padding: 0; }
 
@@ -143,6 +144,7 @@ main { padding: 20px 24px 32px; max-width: 1500px; margin: 0 auto; }
 .title:hover { color: var(--accent-text); }
 .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .genre { font-size: 12px; color: var(--muted); }
+.country { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .genre + .genre::before { content: '· '; }
 .badge { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); white-space: nowrap; }
 .badge.type { color: var(--muted); }
@@ -212,3 +214,11 @@ button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border
   .dropdown { width: 100%; }
   .segmented.when { width: 100%; overflow-x: auto; }
 }
+
+/* Hidden page tabs and auto-hide rules */
+.segmented.tabs { margin: 4px 0 16px; }
+.rules > .primary { margin: 8px 0 4px; }
+.rule-editor { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: grid; gap: 12px; margin: 12px 0; }
+.rule-editor .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.rule-editor .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row-item.dimmed { opacity: 0.6; }

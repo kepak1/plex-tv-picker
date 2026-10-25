@@ -150,6 +150,50 @@ export async function recordingState(): Promise<RecordingState> {
   return { subscribed, scheduled };
 }
 
+// ---------- Watch history (recommendations) ----------
+
+export interface HistoryEntry {
+  accountID: number;
+  type: string;
+  title: string;
+  grandparentTitle?: string;
+  ratingKey?: string;
+  grandparentKey?: string;
+  viewedAt: number;
+}
+
+/** Everything watched on this server, by every account. */
+export async function watchHistory(): Promise<HistoryEntry[]> {
+  return (await serverGetAll('/status/sessions/history/all?sort=viewedAt:desc')) as unknown as HistoryEntry[];
+}
+
+/** The id the server uses for an account in its history: 1 for the owner, the plex.tv id for everyone else. */
+export async function serverAccountId(user: { id: number; username: string; email: string | null }): Promise<number> {
+  const { myPlexUsername } = await server();
+  const names = [user.email, user.username].filter(Boolean).map((v) => v!.toLowerCase());
+  // myPlexUsername is usually the owner's email; the server's account list names account 1 by username.
+  if (myPlexUsername && names.includes(myPlexUsername.toLowerCase())) return 1;
+  const accounts = await serverGet<Container<{ Account?: { id: number; name: string }[] }>>('/accounts').catch(() => null);
+  const owner = accounts?.MediaContainer.Account?.find((a) => a.id === 1);
+  return owner && names.includes(owner.name.toLowerCase()) ? 1 : user.id;
+}
+
+/** Genres and TMDB ids of library items, by rating key; items deleted from the library are missing. */
+export async function libraryMetadata(ratingKeys: string[]): Promise<Map<string, { genres: string[]; tmdbId: number | null }>> {
+  const out = new Map<string, { genres: string[]; tmdbId: number | null }>();
+  for (let i = 0; i < ratingKeys.length; i += 100) {
+    const batch = ratingKeys.slice(i, i + 100);
+    const res = await serverGet<Container<{ Metadata?: (PlexMetadata & { ratingKey: string; Guid?: { id: string }[] })[] }>>(
+      `/library/metadata/${batch.join(',')}?includeGuids=1`,
+    ).catch(() => null);
+    for (const m of res?.MediaContainer.Metadata ?? []) {
+      const tmdb = m.Guid?.find((g) => g.id.startsWith('tmdb://'))?.id.slice(7);
+      out.set(m.ratingKey, { genres: (m.Genre ?? []).map((g) => g.tag).filter((g) => g !== 'Movies'), tmdbId: tmdb ? Number(tmdb) : null });
+    }
+  }
+  return out;
+}
+
 // ---------- Plex discover (title suggestions) ----------
 
 export interface DiscoverResult {

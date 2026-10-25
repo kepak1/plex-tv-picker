@@ -48,13 +48,20 @@
     "sort": "Sort",
     "sortStart": "Next airing",
     "sortTitle": "Title",
-    "sortYear": "Year (newest)",
+    "sortYear": "Year",
     "sortRating": "Rating",
     "sortAdded": "New in guide",
     "reset": "Clear filters",
     "selected": "Selected: {{count}}",
     "more": "More filters",
-    "less": "Fewer filters"
+    "less": "Fewer filters",
+    "ascending": "Ascending (click to reverse)",
+    "descending": "Descending (click to reverse)",
+    "countries": "Countries",
+    "anyCountry": "Any country",
+    "unknownCountry": "Unknown country",
+    "recommended": "Only recommended",
+    "recommendedHint": "Picked for you from your Plex watch history"
   },
   "view": {
     "list": "List",
@@ -70,7 +77,9 @@
     "neverSynced": "Guide not downloaded yet",
     "refresh": "Refresh now",
     "refreshing": "Refreshing…",
-    "syncError": "Last refresh failed: {{error}}"
+    "syncError": "Last refresh failed: {{error}}",
+    "noRecommendations": "No recommendations: your account has no watch history on this Plex server yet.",
+    "recommendationsPending": "Recommendations are being prepared from your watch history. Check back in a few minutes."
   },
   "item": {
     "movie": "Movie",
@@ -101,7 +110,8 @@
     "episode": "E{{episode}}",
     "readMore": "More",
     "readLess": "Less",
-    "rating": "TMDB rating"
+    "rating": "TMDB rating",
+    "hiddenByRule": "Rule: {{name}}"
   },
   "ignored": {
     "title": "Hidden",
@@ -125,7 +135,9 @@
     "cleared_one": "Restored {{count}} entry.",
     "cleared_other": "Restored {{count}} entries.",
     "found_one": "Found {{count}} entry",
-    "found_other": "Found {{count}} entries"
+    "found_other": "Found {{count}} entries",
+    "tabItems": "Titles and episodes",
+    "tabRules": "Rules"
   },
   "wishlist": {
     "title": "Wishlist",
@@ -156,7 +168,9 @@
     "saved": "Saved",
     "testEmail": "Send test email",
     "testSent": "Test email sent",
-    "smtpMissing": "Email is not configured (SMTP_HOST is missing)."
+    "smtpMissing": "Email is not configured (SMTP_HOST is missing).",
+    "recs": "Recommendations in the daily email",
+    "recsHint": "The 20 best titles to record from the whole guide, picked from your Plex watch history (excluding hidden, scheduled and titles you have)."
   },
   "time": {
     "today": "Today",
@@ -179,10 +193,56 @@
     "openInPlex": "Open in Plex to record",
     "testSubject": "RecPick – test",
     "testBody": "This email confirms that notifications work.",
-    "footer": "You can change notification settings in RecPick."
+    "footer": "You can change notification settings in RecPick.",
+    "recsHeading": "Recommended to record",
+    "recsIntro": "Picked from the whole guide based on what you watch on Plex:",
+    "recsSubject_one": "{{count}} title recommended to record",
+    "recsSubject_other": "{{count}} titles recommended to record",
+    "because": "Because you watched {{title}}"
   },
   "support": {
     "text": "Enjoying RecPick? You can buy me a coffee.",
     "button": "Support on Ko-fi"
+  },
+  "rules": {
+    "text": "A rule hides everything that matches all of its conditions: in the list, in alerts, in the daily email and in recommendations. Within one condition (e.g. genres) any of the picked values matches.",
+    "add": "New rule",
+    "name": "Name",
+    "defaultName": "My rule",
+    "type": "Type",
+    "anyGenre": "Any genre",
+    "anyCountry": "Any country",
+    "anyChannel": "Any channel",
+    "ratingBelow": "TMDB rating below",
+    "channelHint": "With channels, only the airings on those channels are hidden. A title disappears when it has no airings left on other channels.",
+    "missingHint": "Titles with no year, rating or country never match those conditions. Pick “Unknown country” to hide titles TMDB doesn't know.",
+    "needCondition": "Pick at least one condition.",
+    "matches_one": "Hides {{count}} title in the current guide",
+    "matches_other": "Hides {{count}} titles in the current guide",
+    "disabled": "Off",
+    "enable": "Turn on",
+    "disable": "Turn off",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Delete rule “{{name}}”?",
+    "empty": "No rules yet.",
+    "yearsBetween": "{{from}}-{{to}}",
+    "yearsFrom": "from {{from}}",
+    "yearsTo": "up to {{to}}",
+    "ratingBelowShort": "rating < {{rating}}",
+    "onChannels": "on {{channels}}",
+    "fromFilters": "Save filters as rule",
+    "fromFiltersHint": "Creates a rule that hides what these filters show",
+    "missingHintNoTmdb": "Titles with no year never match a year condition."
+  },
+  "countries": {
+    "AN": "Netherlands Antilles",
+    "CS": "Serbia and Montenegro",
+    "DD": "East Germany",
+    "SU": "Soviet Union",
+    "XC": "Czechoslovakia",
+    "XG": "East Germany",
+    "XI": "Northern Ireland",
+    "YU": "Yugoslavia"
   }
 }
