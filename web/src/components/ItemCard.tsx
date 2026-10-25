@@ -46,7 +46,7 @@ export function ItemCard({ item, view, actions }: { item: Item; view: 'list' | '
           {item.hiddenBy && <span className="badge">{t('item.hiddenByRule', { name: item.hiddenBy })}</span>}
           {(item.countries ?? []).slice(0, view === 'grid' ? 1 : 3).map((c) => (
             <span key={c} className="country" title={countryName(c)}>
-              {flag(c)} {view === 'list' && countryName(c)}
+              {view === 'list' ? `${flag(c)} ${countryName(c)}`.trim() : flag(c) || countryName(c)}
             </span>
           ))}
           {item.genres.slice(0, view === 'grid' ? 2 : 6).map((g) => (

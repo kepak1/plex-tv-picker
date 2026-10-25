@@ -13,6 +13,8 @@ All notable changes to RecPick are listed here. Versions follow [Semantic Versio
 ### Changed
 - With a TMDB key, every guide title is looked up once more after the upgrade to fetch countries and genres (a few minutes in the background).
 - The daily email can now contain new titles, recommendations or both.
+- Fewer TMDB requests: titles every user has hidden are not looked up, and data is rechecked every 90 days (was 30) with one request instead of two.
+- TMDB movie search retries without the year when the guide's year is off by one (more movies get a rating and a country).
 
 ## [0.1.0-alpha] - 2026-10-24
 

@@ -55,14 +55,19 @@ export function img(url: string | null, width = 300): string | undefined {
 /** Filter value for titles whose country is unknown (UNKNOWN_COUNTRY in server/catalog.ts). */
 export const UNKNOWN_COUNTRY = 'none';
 
-/** "US" -> 🇺🇸 (regional indicator letters). */
+// Codes TMDB uses for countries that no longer exist (or aren't in ISO 3166). Browsers would name
+// them after today's successor (SU -> Russia), so they have their own names in locales/*.json.
+const HISTORICAL = new Set(['AN', 'CS', 'DD', 'SU', 'XC', 'XG', 'XI', 'YU']);
+
+/** "US" -> 🇺🇸 (regional indicator letters); none for historical countries. */
 export function flag(code: string): string {
-  return /^[A-Z]{2}$/.test(code) ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0))) : '';
+  return /^[A-Z]{2}$/.test(code) && !HISTORICAL.has(code) ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0))) : '';
 }
 
 const regionNames = new Map<string, Intl.DisplayNames>();
 /** Country name in the UI language, from the browser (no translations to maintain). */
 export function countryName(code: string): string {
+  if (HISTORICAL.has(code)) return i18n.t(`countries.${code}`);
   const locale = localeTag();
   let names = regionNames.get(locale);
   if (!names) {
@@ -78,7 +83,7 @@ export function countryName(code: string): string {
 
 /** Country options for a MultiSelect, by name in the UI language, with "unknown" last. */
 export function countryOptions(codes: string[], unknownLabel: string): { value: string; label: string }[] {
-  const named = codes.map((c) => ({ value: c, label: `${flag(c)} ${countryName(c)}`, name: countryName(c) }));
+  const named = codes.map((c) => ({ value: c, label: `${flag(c)} ${countryName(c)}`.trim(), name: countryName(c) }));
   named.sort((a, b) => a.name.localeCompare(b.name, localeTag()));
   return [...named.map(({ value, label }) => ({ value, label })), { value: UNKNOWN_COUNTRY, label: unknownLabel }];
 }

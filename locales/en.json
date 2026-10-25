@@ -234,5 +234,15 @@
     "fromFilters": "Save filters as rule",
     "fromFiltersHint": "Creates a rule that hides what these filters show",
     "missingHintNoTmdb": "Titles with no year never match a year condition."
+  },
+  "countries": {
+    "AN": "Netherlands Antilles",
+    "CS": "Serbia and Montenegro",
+    "DD": "East Germany",
+    "SU": "Soviet Union",
+    "XC": "Czechoslovakia",
+    "XG": "East Germany",
+    "XI": "Northern Ireland",
+    "YU": "Yugoslavia"
   }
 }

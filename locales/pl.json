@@ -252,5 +252,15 @@
     "fromFilters": "Zapisz filtry jako regułę",
     "fromFiltersHint": "Tworzy regułę, która ukrywa to, co pokazują te filtry",
     "missingHintNoTmdb": "Tytuły bez roku nigdy nie spełniają warunku roku."
+  },
+  "countries": {
+    "AN": "Antyle Holenderskie",
+    "CS": "Serbia i Czarnogóra",
+    "DD": "NRD",
+    "SU": "ZSRR",
+    "XC": "Czechosłowacja",
+    "XG": "NRD",
+    "XI": "Irlandia Północna",
+    "YU": "Jugosławia"
   }
 }
