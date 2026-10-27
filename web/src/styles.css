@@ -258,3 +258,10 @@ button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border
   .selection-bar { top: 96px; }
   .selection-paths .field, .selection-paths input { width: 100%; }
 }
+
+/* Joining parts and renumbering in duplicates */
+.dup-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.dup-plan { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; font-size: 12px; }
+.dup-plan select { font-size: 12px; padding: 3px 6px; }
+.dup-plan .episode-code { width: 86px; font-size: 12px; padding: 3px 6px; text-transform: uppercase; }
+.dup-plan button.link { color: var(--accent-text); padding: 0; }
