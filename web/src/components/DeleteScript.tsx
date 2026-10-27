@@ -80,6 +80,7 @@ export function buildScript(
     summary: (files: number, size: string) => string;
     missing: string;
     nothing: string;
+    noPermission: string;
     confirm: string;
     cancelled: string;
     done: string;
@@ -108,6 +109,17 @@ export function buildScript(
     `  echo ${quote(text.nothing)}`,
     '  exit 0',
     'fi',
+    // Recordings usually belong to the Plex user: say so up front instead of failing (and
+    // having rm ask about every write-protected file) half way through.
+    'if [ "$(id -u)" -ne 0 ]; then',
+    '  blocked=0',
+    '  for f in "${present[@]}"; do [ -w "$(dirname -- "$f")" ] || blocked=$((blocked + 1)); done',
+    '  if [ $blocked -gt 0 ]; then',
+    `    echo ${quote(text.noPermission)}`,
+    '    echo "  sudo bash $0"',
+    '    exit 1',
+    '  fi',
+    'fi',
     `printf '  %s\\n' "\${present[@]}"`,
     `read -r -p ${quote(`${text.confirm} `)}"(\${#present[@]}) [${text.yes}/N] " answer`,
     'case "$answer" in',
@@ -116,7 +128,8 @@ export function buildScript(
     'esac',
     'failed=0',
     'for f in "${present[@]}"; do',
-    '  rm -v -- "$f" || failed=1',
+    // -f: no question for each write-protected file; the answer above covers all of them.
+    '  rm -fv -- "$f" || failed=1',
     'done',
     `echo ${quote(text.done)}`,
     'exit $failed',
@@ -163,6 +176,7 @@ export function SelectionBar({
       summary: (files, size) => t('script.summary', { count: files, size }),
       missing: t('script.missing'),
       nothing: t('script.nothing'),
+      noPermission: t('script.noPermission'),
       confirm: t('script.confirm'),
       cancelled: t('script.cancelled'),
       done: t('script.done'),

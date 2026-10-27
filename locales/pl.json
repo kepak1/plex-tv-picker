@@ -360,6 +360,7 @@
     "summary_one": "{{count}} plik, {{size}}",
     "summary_few": "{{count}} pliki, {{size}}",
     "summary_many": "{{count}} plików, {{size}}",
-    "summary_other": "{{count}} pliku, {{size}}"
+    "summary_other": "{{count}} pliku, {{size}}",
+    "noPermission": "Brak uprawnień do usunięcia części plików, nic nie usunięto. Uruchom skrypt z sudo:"
   }
 }
