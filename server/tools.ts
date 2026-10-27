@@ -8,7 +8,7 @@ import { updateShortRecordings } from './short.js';
 let scanning: Promise<void> | null = null;
 
 export async function updateLibraryTools(lib: Library): Promise<void> {
-  updateDuplicates(lib);
+  await updateDuplicates(lib);
   // TMDB lookups can fail (network, key); the duplicates above are kept either way.
   try {
     await updateShortRecordings(lib);

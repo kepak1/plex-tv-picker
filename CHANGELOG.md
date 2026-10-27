@@ -2,7 +2,16 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
-## [0.5.1-alpha] - 2026-10-27
+## [0.6.0-alpha] - 2026-10-27
+
+### Added
+- *Duplicate recordings*: the downloaded script can now **join the parts of a two-part episode** and **renumber files filed under the wrong episode**, besides deleting ([#13](https://github.com/kepak1/recpick/issues/13)).
+  - Groups whose file names carry part markers ("cz. 2", "część 2", "Part II") are labelled *Parts*. *Join parts* numbers one copy per part (the longest one not cut short), and any copy can be set as part N by hand. The script can't be downloaded until the parts are numbered 1..N without gaps.
+  - Joining uses ffmpeg. Parts with the same codecs and resolution are joined without re-encoding, even from different containers. Otherwise the result is re-encoded to the best part's codec and frame size with AAC audio. The joined `.mkv` is named after part 1 with "(cz. 1-N)", keeps the owner of the original, and the parts are deleted only when ffprobe shows the right total length.
+  - Groups whose files carry different episode titles are labelled *Different episodes?*. Any copy can be renumbered (`SxxEyy` in the file name), and with TMDB the right number is suggested by matching the title to the show's episode titles (Polish, then the original language; cached for 90 days).
+  - The script renames first, then joins, then deletes, after one confirmation that lists everything. It never overwrites a file.
+
+
 
 ### Fixed
 - Delete script: when run without permission to delete some of the files (recordings usually belong to the Plex user), it now stops before asking, deletes nothing and tells you to run it with `sudo`, instead of asking about every write-protected file and failing half way. Files are removed with `rm -f`, so the single confirmation covers all of them.
@@ -62,6 +71,7 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.6.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.6.0-alpha
 [0.5.1-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.1-alpha
 [0.5.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.0-alpha
 [0.4.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.4.0-alpha

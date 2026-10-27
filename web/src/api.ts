@@ -184,6 +184,10 @@ export interface LibraryCopy {
 
 export interface DuplicateCopy extends LibraryCopy {
   short: boolean;
+  /** The following are missing in scans made before 0.6.0. */
+  fileTitle?: string | null;
+  part?: number | null;
+  suggested?: { season: number; episode: number; title: string } | null;
 }
 
 export interface DuplicateGroup {
@@ -195,6 +199,8 @@ export interface DuplicateGroup {
   episode: number | null;
   airDate: string | null;
   year: number | null;
+  differentEpisodes?: boolean;
+  hasParts?: boolean;
   copies: DuplicateCopy[];
   ignored: boolean;
 }

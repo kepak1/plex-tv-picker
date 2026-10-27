@@ -305,3 +305,65 @@ export async function seasonRuntimes(seasons: { id: number; season: number }[]):
   for (const [k, v] of found) if (v) out.set(k, v);
   return out;
 }
+
+// Episode titles of a whole show (Polish and original language), for telling which episode a
+// recording really is when the guide filed it under the wrong number.
+db.exec(`
+CREATE TABLE IF NOT EXISTS tmdb_episodes (
+  tmdb_id INTEGER PRIMARY KEY,
+  episodes TEXT NOT NULL,        -- [{"season": 1, "episode": 2, "names": ["...", "..."]}]
+  checked_at INTEGER NOT NULL
+);
+`);
+
+export interface EpisodeTitles {
+  season: number;
+  episode: number;
+  /** Polish title first, then the original-language one; placeholders like "Odcinek 5" are left out. */
+  names: string[];
+}
+
+const PLACEHOLDER = /^(?:odcinek|episode|folge|episodio|épisode)\s*\d+$/i;
+
+async function fetchEpisodeTitles(id: number): Promise<EpisodeTitles[] | null> {
+  const show = await call<{ original_language?: string; seasons?: { season_number: number }[] }>(`/tv/${id}`, { language: 'pl-PL' });
+  if (!show) return null;
+  const languages = ['pl-PL', ...(show.original_language && show.original_language !== 'pl' ? [show.original_language] : [])];
+  const byEpisode = new Map<string, EpisodeTitles>();
+  for (const { season_number } of show.seasons ?? []) {
+    for (const language of languages) {
+      const s = await call<{ episodes?: { episode_number: number; name?: string }[] }>(`/tv/${id}/season/${season_number}`, { language });
+      for (const e of s?.episodes ?? []) {
+        const key = `${season_number}|${e.episode_number}`;
+        const entry = byEpisode.get(key) ?? { season: season_number, episode: e.episode_number, names: [] };
+        const name = e.name?.trim();
+        if (name && !PLACEHOLDER.test(name) && !entry.names.includes(name)) entry.names.push(name);
+        byEpisode.set(key, entry);
+      }
+    }
+  }
+  return [...byEpisode.values()];
+}
+
+/** Every episode's titles for each show id, looked up once and rechecked every 90 days. */
+export async function showEpisodeTitles(ids: number[]): Promise<Map<number, EpisodeTitles[]>> {
+  const stored = new Map<number, { value: EpisodeTitles[]; checkedAt: number }>();
+  for (const r of db.prepare('SELECT * FROM tmdb_episodes').all() as Record<string, any>[]) {
+    stored.set(r.tmdb_id, { value: JSON.parse(r.episodes), checkedAt: r.checked_at });
+  }
+  const unique = [...new Set(ids)];
+  if (tmdbEnabled()) {
+    const stale = unique.filter((id) => (stored.get(id)?.checkedAt ?? 0) < now() - RECHECK_AFTER);
+    const save = db.prepare(
+      `INSERT INTO tmdb_episodes (tmdb_id, episodes, checked_at) VALUES (?, ?, ?)
+       ON CONFLICT(tmdb_id) DO UPDATE SET episodes = excluded.episodes, checked_at = excluded.checked_at`,
+    );
+    await pool('show episode titles', stale, async (id) => {
+      const value = (await fetchEpisodeTitles(id)) ?? [];
+      save.run(id, JSON.stringify(value), now());
+      stored.set(id, { value, checkedAt: now() });
+      return value.length > 0;
+    });
+  }
+  return new Map(unique.filter((id) => stored.has(id)).map((id) => [id, stored.get(id)!.value]));
+}

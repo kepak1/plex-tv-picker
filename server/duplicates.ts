@@ -1,6 +1,9 @@
 import { db, getMeta, now, setMeta } from './db.js';
 import { copiesOf, showKey, type Library, type LibraryCopy, type LibraryMetadata } from './library.js';
 import { normalize } from './text.js';
+import { fileTitleOf, partOf, storyKey } from './episodeFiles.js';
+import { libraryMetadata } from './plex.js';
+import { showEpisodeTitles, tmdbEnabled, type EpisodeTitles } from './tmdb.js';
 
 // Duplicate recordings in the Plex library: the same episode or movie stored more than once, either
 // as several versions of one item (Plex merged the files) or as separate items. RecPick only lists
@@ -22,6 +25,12 @@ CREATE TABLE IF NOT EXISTS duplicate_ignores (
 
 export interface DuplicateCopy extends LibraryCopy {
   short: boolean;
+  /** Episode title from the DVR file name, when it says more than the show's name. */
+  fileTitle: string | null;
+  /** Part number from "cz. 2", "część 2" or "Part II" in that title. */
+  part: number | null;
+  /** The episode TMDB lists under that title (with a TMDB key). */
+  suggested: { season: number; episode: number; title: string } | null;
 }
 
 export interface DuplicateGroup {
@@ -34,6 +43,12 @@ export interface DuplicateGroup {
   episode: number | null;
   airDate: string | null;
   year: number | null;
+  /** The show's library rating key, for looking up its TMDB id. */
+  showRatingKey: string | null;
+  /** The files' titles name different stories: probably different episodes filed under one number. */
+  differentEpisodes: boolean;
+  /** The files are numbered parts (part 1, part 2) of one story. */
+  hasParts: boolean;
   copies: DuplicateCopy[];
   ignored: boolean;
 }
@@ -91,11 +106,19 @@ export function findDuplicates({ movies, episodes }: Library): Scan {
         episode: kind === 'episode' ? (m.index ?? null) : null,
         airDate: m.originallyAvailableAt ?? null,
         year: m.year ?? null,
+        showRatingKey: kind === 'episode' ? (m.grandparentRatingKey ?? null) : null,
+        differentEpisodes: false,
+        hasParts: false,
         copies: [],
       };
       groups.set(key, g);
     }
-    g.copies.push(...copiesOf(m).map((c) => ({ ...c, short: false })));
+    g.copies.push(
+      ...copiesOf(m).map((c) => {
+        const fileTitle = kind === 'episode' ? fileTitleOf(c.file, m.grandparentTitle ?? null) : null;
+        return { ...c, short: false, fileTitle, part: partOf(fileTitle), suggested: null };
+      }),
+    );
   };
   for (const m of episodes) {
     const key = episodeKey(m);
@@ -108,6 +131,9 @@ export function findDuplicates({ movies, episodes }: Library): Scan {
     const longest = Math.max(0, ...g.copies.map((c) => c.duration ?? 0));
     for (const c of g.copies) c.short = longest > 0 && (c.duration ?? 0) < longest * SHORT_SHARE;
     g.copies.sort((a, b) => (b.duration ?? 0) - (a.duration ?? 0));
+    const titled = g.copies.filter((c) => c.fileTitle);
+    g.differentEpisodes = new Set(titled.map((c) => storyKey(c.fileTitle!))).size > 1;
+    g.hasParts = new Set(titled.map((c) => c.part).filter((p) => p != null)).size > 1;
   }
   out.sort(
     (a, b) =>
@@ -119,9 +145,42 @@ export function findDuplicates({ movies, episodes }: Library): Scan {
   return { scannedAt: now(), groups: out };
 }
 
+/** The episode with exactly this title, or this story and part number; null when unclear. */
+function episodeFor(title: string, episodes: EpisodeTitles[]): EpisodeTitles | null {
+  const exact = episodes.filter((e) => e.names.some((n) => normalize(n) === normalize(title)));
+  if (exact.length === 1) return exact[0];
+  const story = storyKey(title);
+  const part = partOf(title);
+  const near = episodes.filter((e) => e.names.some((n) => storyKey(n) === story && partOf(n) === part));
+  return near.length === 1 ? near[0] : null;
+}
+
+/** TMDB's episode number for files whose title shows they are another episode, or a part of one. */
+async function addEpisodeHints(s: Scan): Promise<void> {
+  const groups = s.groups.filter((g) => g.kind === 'episode' && g.showRatingKey && (g.differentEpisodes || g.hasParts));
+  if (!tmdbEnabled() || groups.length === 0) return;
+  const meta = await libraryMetadata([...new Set(groups.map((g) => g.showRatingKey!))]);
+  const ids = new Map(groups.map((g) => [g.key, meta.get(g.showRatingKey!)?.tmdbId ?? null]));
+  const titles = await showEpisodeTitles([...ids.values()].filter((id): id is number => id != null));
+  for (const g of groups) {
+    const episodes = titles.get(ids.get(g.key) ?? -1);
+    if (!episodes) continue;
+    for (const c of g.copies) {
+      const e = c.fileTitle ? episodeFor(c.fileTitle, episodes) : null;
+      c.suggested = e && { season: e.season, episode: e.episode, title: e.names[0] };
+    }
+  }
+}
+
 /** Scans library data the sync (or the tools' refresh) has fetched. */
-export function updateDuplicates(lib: Library): void {
+export async function updateDuplicates(lib: Library): Promise<void> {
   scan = findDuplicates(lib);
+  // Hints are a bonus: without them (no key, TMDB down) the groups are still listed.
+  try {
+    await addEpisodeHints(scan);
+  } catch (err) {
+    console.error('[duplicates] episode hints failed', err);
+  }
   setMeta('duplicates', JSON.stringify(scan));
   console.log(`[duplicates] ${scan.groups.length} groups`);
 }

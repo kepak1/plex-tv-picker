@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import type { LibraryCopy } from '../api';
 import { useApp } from '../app';
 import { formatSize } from '../format';
+import { buildScript, filesOf, mapPath, type CopyPlan, type Operations, type PathMap, type Plans } from './plan';
 
-// Selected files and a bash script that deletes them. RecPick never deletes anything itself:
-// the user downloads the script and runs it on the machine that has the files.
+// Selected files, planned renames and joins, and the bash script that carries them out. RecPick
+// never changes files itself: the user downloads the script and runs it where the files are.
 
 function readStorage<T>(key: string, fallback: T): T {
   try {
@@ -49,111 +50,73 @@ export function useSelection(tool: string, available: LibraryCopy[] | null) {
     });
   }, []);
   const add = useCallback((ids: number[]) => setSelected((s) => new Set([...s, ...ids])), []);
+  const remove = useCallback(
+    (ids: number[]) =>
+      setSelected((s) => {
+        if (!ids.some((id) => s.has(id))) return s;
+        const next = new Set(s);
+        for (const id of ids) next.delete(id);
+        return next;
+      }),
+    [],
+  );
   const clear = useCallback(() => setSelected(new Set()), []);
 
-  return { selected, toggle, add, clear };
+  return { selected, toggle, add, remove, clear };
 }
 
-interface PathMap {
-  from: string;
-  to: string;
+/** Planned joins and renames per copy, remembered in this browser like the selection. */
+export function usePlans(tool: string, available: LibraryCopy[] | null) {
+  const key = `recpick.plans.${tool}`;
+  const [plans, setPlans] = useState<Plans>(() => readStorage<Plans>(key, {}));
+
+  useEffect(() => {
+    if (!available) return;
+    const ids = new Set(available.map((c) => c.mediaId));
+    setPlans((p) => {
+      const kept = Object.entries(p).filter(([id]) => ids.has(Number(id)));
+      return kept.length === Object.keys(p).length ? p : Object.fromEntries(kept);
+    });
+  }, [available]);
+
+  useEffect(() => writeStorage(key, plans), [key, plans]);
+
+  /** Sets (or with `undefined`, clears) the plan of several copies at once. */
+  const set = useCallback((changes: Record<number, CopyPlan | undefined>) => {
+    setPlans((p) => {
+      const next = { ...p };
+      for (const [id, plan] of Object.entries(changes)) {
+        if (plan && (plan.part || plan.renumber !== undefined)) next[Number(id)] = plan;
+        else delete next[Number(id)];
+      }
+      return next;
+    });
+  }, []);
+  const clear = useCallback(() => setPlans({}), []);
+
+  return { plans, set, clear };
 }
 
 const PATH_MAP_KEY = 'recpick.pathMap';
 
-const filesOf = (c: LibraryCopy) => c.files ?? (c.file ? [c.file] : []);
-
-export function mapPath(path: string, map: PathMap): string {
-  const from = map.from.trim().replace(/\/+$/, '');
-  if (!from || (path !== from && !path.startsWith(`${from}/`))) return path;
-  return map.to.trim().replace(/\/+$/, '') + path.slice(from.length);
-}
-
-/** Single-quoted for bash: nothing inside is expanded. */
-const quote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
-
-export function buildScript(
-  copies: LibraryCopy[],
-  map: PathMap,
-  text: {
-    header: string;
-    summary: (files: number, size: string) => string;
-    missing: string;
-    nothing: string;
-    noPermission: string;
-    confirm: string;
-    cancelled: string;
-    done: string;
-    yes: string;
-  },
-): string {
-  const paths = [...new Set(copies.flatMap(filesOf).map((p) => mapPath(p, map)))].filter((p) => p && !/[\n\r]/.test(p));
-  const size = copies.reduce((sum, c) => sum + (c.size ?? 0), 0);
-  // Each answer letter in both cases, e.g. "t" -> [tT], plus "y" which always works.
-  const yes = [...new Set([text.yes, 'y'])].map((l) => `[${l.toLowerCase()}${l.toUpperCase()}]*`).join('|');
-  return [
-    '#!/usr/bin/env bash',
-    `# ${text.header}`,
-    `# ${text.summary(paths.length, formatSize(size))}`,
-    // `sh script.sh` runs dash on Debian/Ubuntu, which has no arrays: switch to bash first.
-    // Shells run a script line by line, so this happens before the array below is parsed.
-    'if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi',
-    'set -u',
-    '',
-    'files=(',
-    ...paths.map((p) => `  ${quote(p)}`),
-    ')',
-    '',
-    'present=()',
-    'for f in "${files[@]}"; do',
-    '  if [ -e "$f" ]; then present+=("$f"); else echo ' + quote(`${text.missing}: `) + '"$f"; fi',
-    'done',
-    'if [ ${#present[@]} -eq 0 ]; then',
-    `  echo ${quote(text.nothing)}`,
-    '  exit 0',
-    'fi',
-    // Recordings usually belong to the Plex user: say so up front instead of failing (and
-    // having rm ask about every write-protected file) half way through.
-    'if [ "$(id -u)" -ne 0 ]; then',
-    '  blocked=0',
-    '  for f in "${present[@]}"; do [ -w "$(dirname -- "$f")" ] || blocked=$((blocked + 1)); done',
-    '  if [ $blocked -gt 0 ]; then',
-    `    echo ${quote(text.noPermission)}`,
-    '    echo "  sudo bash $0"',
-    '    exit 1',
-    '  fi',
-    'fi',
-    `printf '  %s\\n' "\${present[@]}"`,
-    `read -r -p ${quote(`${text.confirm} `)}"(\${#present[@]}) [${text.yes}/N] " answer`,
-    'case "$answer" in',
-    `  ${yes}) ;;`,
-    `  *) echo ${quote(text.cancelled)}; exit 1 ;;`,
-    'esac',
-    'failed=0',
-    'for f in "${present[@]}"; do',
-    // -f: no question for each write-protected file; the answer above covers all of them.
-    '  rm -fv -- "$f" || failed=1',
-    'done',
-    `echo ${quote(text.done)}`,
-    'exit $failed',
-    '',
-  ].join('\n');
-}
-
 /**
- * Selected files with their total size, a prefix mapping for paths and the script download.
- * `warnings` lists things to double-check, e.g. episodes with every copy selected.
+ * Selected files with their total size, planned renames and joins, a prefix mapping for paths and
+ * the script download. `warnings` lists things to double-check, e.g. episodes with every copy selected.
  */
 export function SelectionBar({
   tool,
   copies,
+  operations,
   warnings = [],
   actions,
   onSuggest,
   onClear,
 }: {
   tool: string;
+  /** Copies selected for deletion. */
   copies: LibraryCopy[];
+  /** Everything the script should do, for pages with more than deletions. */
+  operations?: (map: PathMap) => Operations;
   warnings?: string[];
   /** Extra buttons for the selected copies, shown before the download. */
   actions?: ReactNode;
@@ -168,19 +131,39 @@ export function SelectionBar({
   useEffect(() => writeStorage(PATH_MAP_KEY, map), [map]);
 
   const size = useMemo(() => copies.reduce((sum, c) => sum + (c.size ?? 0), 0), [copies]);
-  const example = copies.map((c) => filesOf(c)[0]).find(Boolean);
+  const ops: Operations = useMemo(
+    () => operations?.(map) ?? { renames: [], joins: [], deletes: copies.flatMap(filesOf).map((p) => mapPath(p, map)), errors: [] },
+    [operations, copies, map],
+  );
+  const renameCount = new Set(ops.renames.map((r) => r.from)).size;
+  const empty = copies.length === 0 && ops.renames.length === 0 && ops.joins.length === 0;
+  const example = copies.map((c) => filesOf(c)[0]).find(Boolean) ?? ops.renames[0]?.from ?? ops.joins[0]?.parts[0];
 
   const download = () => {
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
-    const script = buildScript(copies, map, {
+    const script = buildScript(ops, {
       header: t('script.header', { version: config.version, date: d.toLocaleString() }),
-      summary: (files, size) => t('script.summary', { count: files, size }),
+      summary: [
+        ops.deletes.length ? t('script.summary', { count: ops.deletes.length, size: formatSize(size) }) : '',
+        ops.renames.length ? t('plan.renames', { count: renameCount }) : '',
+        ops.joins.length ? t('plan.joins', { count: ops.joins.length }) : '',
+      ]
+        .filter(Boolean)
+        .join(', '),
       missing: t('script.missing'),
       nothing: t('script.nothing'),
       noPermission: t('script.noPermission'),
-      confirm: t('script.confirm'),
+      noFfmpeg: t('script.noFfmpeg'),
+      encodeSlow: t('script.encodeSlow'),
+      renameHeading: t('script.renameHeading'),
+      joinHeading: t('script.joinHeading'),
+      deleteHeading: t('script.deleteHeading'),
+      exists: t('script.exists'),
+      joinFailed: t('script.joinFailed'),
+      durationMismatch: t('script.durationMismatch'),
+      confirm: t('script.confirmAll'),
       cancelled: t('script.cancelled'),
       done: t('script.done'),
       yes: t('script.yes'),
@@ -188,7 +171,7 @@ export function SelectionBar({
     const url = URL.createObjectURL(new Blob([script], { type: 'text/x-shellscript' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = `recpick-delete-${tool}-${stamp}.sh`;
+    a.download = `recpick-${tool}-${stamp}.sh`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -199,15 +182,17 @@ export function SelectionBar({
         <span>
           <b>{t('script.selected', { count: copies.length })}</b>
           {copies.length > 0 && <span className="muted"> · {formatSize(size)}</span>}
+          {renameCount > 0 && <span className="muted"> · {t('plan.renames', { count: renameCount })}</span>}
+          {ops.joins.length > 0 && <span className="muted"> · {t('plan.joins', { count: ops.joins.length })}</span>}
         </span>
         <button className="small" onClick={onSuggest}>{t('script.suggest')}</button>
-        {copies.length > 0 && (
+        {!empty && (
           <button className="small" onClick={onClear}>{t('script.clear')}</button>
         )}
         <button className="small link" onClick={() => setShowPaths((v) => !v)}>{t('script.paths')}</button>
         <span className="spacer" />
         {actions}
-        <button className="primary small" disabled={copies.length === 0} onClick={download}>
+        <button className="primary small" disabled={empty || ops.errors.length > 0} onClick={download}>
           {t('script.download')}
         </button>
       </div>
@@ -224,13 +209,19 @@ export function SelectionBar({
           {example && map.from && <span className="muted small dup-file">{mapPath(example, map)}</span>}
         </div>
       )}
+      {ops.errors.length > 0 && (
+        <p className="error small">
+          {t('plan.blocked')} {ops.errors.slice(0, 5).join('; ')}
+          {ops.errors.length > 5 && ` +${ops.errors.length - 5}`}
+        </p>
+      )}
       {warnings.length > 0 && (
         <p className="error small">
           {t('script.allCopies', { count: warnings.length })} {warnings.slice(0, 5).join(', ')}
           {warnings.length > 5 && ` +${warnings.length - 5}`}
         </p>
       )}
-      {copies.length > 0 && <p className="muted small">{t('script.howTo')}</p>}
+      {!empty && <p className="muted small">{t(ops.joins.length ? 'script.howToJoin' : 'script.howTo')}</p>}
     </div>
   );
 }
