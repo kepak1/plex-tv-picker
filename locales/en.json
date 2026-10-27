@@ -171,7 +171,9 @@
     "testSent": "Test email sent",
     "smtpMissing": "Email is not configured (SMTP_HOST is missing).",
     "recs": "Recommendations in the daily email",
-    "recsHint": "The 20 best titles to record from the whole guide, picked from your Plex watch history (excluding hidden, scheduled and titles you have)."
+    "recsHint": "The 20 best titles to record from the whole guide, picked from your Plex watch history (excluding hidden, scheduled and titles you have).",
+    "shortThreshold": "Short recordings threshold",
+    "shortThresholdHint": "Recordings shorter than this share of the expected length are listed by the Short recordings tool."
   },
   "time": {
     "today": "Today",
@@ -248,16 +250,20 @@
   },
   "tools": {
     "title": "Tools",
-    "text": "Helpers for your Plex library. RecPick only reads it and never changes anything in Plex."
+    "text": "Helpers for your Plex library. RecPick only reads it and never changes anything in Plex.",
+    "scannedAt": "Last checked: {{date}}",
+    "notScanned": "The library has not been checked yet.",
+    "rescan": "Refresh",
+    "scanning": "Checking…",
+    "openInPlex": "Open in Plex",
+    "added": "added {{date}}",
+    "parts_one": "({{count}} part)",
+    "parts_other": "({{count}} parts)"
   },
   "duplicates": {
     "title": "Duplicate recordings",
     "tile": "Episodes and movies stored in the library more than once.",
     "text": "Episodes and movies that are in the library more than once: as several versions of one item or as separate items. Compare their length and remove the extra copies in Plex.",
-    "scannedAt": "Last checked: {{date}}",
-    "notScanned": "The library has not been checked yet.",
-    "rescan": "Refresh",
-    "scanning": "Checking…",
     "search": "Search show, title or file…",
     "summary_one": "{{count}} duplicate",
     "summary_other": "{{count}} duplicates",
@@ -270,10 +276,26 @@
     "ignore": "Not a duplicate",
     "ignoreHint": "Hides the group for everyone until its set of copies changes.",
     "unignore": "Restore",
-    "openInPlex": "Open in Plex",
-    "short": "Probably cut short",
-    "added": "added {{date}}",
-    "parts_one": "({{count}} part)",
-    "parts_other": "({{count}} parts)"
+    "short": "Probably cut short"
+  },
+  "short": {
+    "title": "Short recordings",
+    "tile": "Recordings much shorter than they should be.",
+    "text": "Recordings much shorter than they should be. Episodes are compared with the typical length of recordings in their season or show, or with the episode runtime from TMDB when a show has only 1-2 recordings. Movies are compared with their TMDB runtime.",
+    "textNoTmdb": "Episodes much shorter than the typical recording in their season or show. With a TMDB key, movies and shows with only 1-2 recordings are checked too.",
+    "threshold": "Showing recordings shorter than {{threshold}}% of the expected length.",
+    "change": "Change in settings",
+    "summary_one": "{{count}} recording",
+    "summary_other": "{{count}} recordings",
+    "none": "No short recordings found.",
+    "ignore": "This is OK",
+    "ignoreHint": "Hides the recording for everyone until its file changes.",
+    "basis": {
+      "season": "season median {{length}}",
+      "show": "show median {{length}}",
+      "tmdb": "TMDB {{length}}"
+    },
+    "moviesUnchecked_one": "{{count}} movie without a TMDB runtime was not checked.",
+    "moviesUnchecked_other": "{{count}} movies without a TMDB runtime were not checked."
   }
 }

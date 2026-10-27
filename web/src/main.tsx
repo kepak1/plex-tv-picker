@@ -13,11 +13,13 @@ import { Ignored } from './pages/Ignored';
 import { Settings } from './pages/Settings';
 import { Tools } from './pages/Tools';
 import { Duplicates } from './pages/Duplicates';
+import { ShortRecordings } from './pages/ShortRecordings';
 import { Logo } from './components/Logo';
 
 function Shell() {
   const { t } = useTranslation();
   const { me, config, tools } = useApp();
+  const toolCount = (tools?.duplicates.count ?? 0) + (tools?.short.count ?? 0);
   const logout = async () => {
     await api('/api/auth/logout', { method: 'POST' });
     location.href = '/';
@@ -34,7 +36,7 @@ function Shell() {
           <NavLink to="/ignored">{t('nav.ignored')}</NavLink>
           <NavLink to="/tools">
             {t('nav.tools')}
-            {!!tools?.duplicates.count && <span className="nav-count">{tools.duplicates.count}</span>}
+            {toolCount > 0 && <span className="nav-count">{toolCount}</span>}
           </NavLink>
           <NavLink to="/settings">{t('nav.settings')}</NavLink>
         </nav>
@@ -51,6 +53,7 @@ function Shell() {
           <Route path="/ignored" element={<Ignored />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/tools/duplicates" element={<Duplicates />} />
+          <Route path="/tools/short" element={<ShortRecordings />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

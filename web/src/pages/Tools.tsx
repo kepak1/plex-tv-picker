@@ -13,6 +13,7 @@ export function Tools() {
   }, [reloadTools]);
 
   const duplicates = tools?.duplicates.count ?? 0;
+  const short = tools?.short.count ?? 0;
 
   return (
     <div className="page narrow">
@@ -25,6 +26,13 @@ export function Tools() {
             {duplicates > 0 && <span className="nav-count">{duplicates}</span>}
           </span>
           <span className="muted small">{t('duplicates.tile')}</span>
+        </Link>
+        <Link to="/tools/short" className="tool-tile">
+          <span className="tool-name">
+            {t('short.title')}
+            {short > 0 && <span className="nav-count">{short}</span>}
+          </span>
+          <span className="muted small">{t('short.tile')}</span>
         </Link>
       </div>
     </div>

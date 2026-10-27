@@ -23,7 +23,7 @@ Plex's *Live TV → Browse* shows the same titles you already skipped over and o
 - **Optional daily email** with everything new in the guide and/or your recommendations.
 - **Open in Plex**: every title and airing links straight to its Plex Web page with the *Record* button.
 - **Search Google** button for every title.
-- **Tools**: a separate tab for library helpers. The first one finds **duplicate recordings**: episodes and movies stored more than once (several versions of one item or separate items), with each copy's length, size, quality, date added and file path, a warning for copies that look cut short, and a link to Plex to remove the extras. Groups that aren't real duplicates can be marked as such.
+- **Tools**: a separate tab for library helpers. The first one finds **duplicate recordings**: episodes and movies stored more than once (several versions of one item or separate items), with each copy's length, size, quality, date added and file path, a warning for copies that look cut short, and a link to Plex to remove the extras. Groups that aren't real duplicates can be marked as such. The second one finds **short recordings**: episodes much shorter than the typical recording of their season or show (or than TMDB's episode runtime for shows with only 1-2 recordings) and, with TMDB, movies shorter than their TMDB runtime. The threshold (default 80%) is set per user in *Settings*.
 - **Sign in with Plex**: only users of your Plex server get in, and each user has their own hidden list, wishlist, email and language.
 - **Translations**: English and Polish; adding a language is one JSON file.
 
@@ -119,6 +119,7 @@ Stack: Node.js + Fastify + SQLite (`node:sqlite`) on the backend, React + Vite +
 - Your recording rules and scheduled recordings are read live from Plex (cached for a minute), so *Hide scheduled* is always current.
 - Recommendations read the server's watch history (`/status/sessions/history/all`) for each signed-in user, then score every guide title: TMDB's recommendations for each watched title, plus a genre and country profile (rarer genres count more, recent viewing counts more). Titles you watched, have or hid are left out. They are recalculated after every refresh.
 - Duplicate recordings are found in the library data read during every refresh (or with *Refresh* on the tool page): episodes with the same show, season and episode number (or the same episode title, or air date, when there are no numbers), and movies with the same title and year. RecPick never deletes anything; copies are removed in Plex.
+- Short recordings use the same library data. Episodes are compared with the median length of their season (with at least 5 recordings) or show (at least 3); other episodes and movies with TMDB runtimes, which are cached and rechecked every 90 days like other TMDB data. Movies use the TMDB id Plex has matched; those without one are skipped.
 - Links open `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/provider/<EPG provider>/details?key=<item>`, the same page you get from Plex's own guide.
 
 ## Privacy

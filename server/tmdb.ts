@@ -242,3 +242,66 @@ export async function watchedDetails(titles: WatchedTitle[]): Promise<Map<string
   }
   return out;
 }
+
+// Runtimes of library titles, for the short recordings tool: a movie's runtime, or every episode's in a season.
+db.exec(`
+CREATE TABLE IF NOT EXISTS tmdb_runtimes (
+  kind TEXT NOT NULL,            -- 'movie' | 'season'
+  tmdb_id INTEGER NOT NULL,
+  season INTEGER NOT NULL DEFAULT -1,
+  runtimes TEXT NOT NULL,        -- movie: minutes or null; season: {"<episode>": minutes}
+  checked_at INTEGER NOT NULL,
+  PRIMARY KEY (kind, tmdb_id, season)
+);
+`);
+
+/** Stored runtimes of one kind, looking up the missing and stale ones first. */
+async function runtimes<T>(
+  kind: 'movie' | 'season',
+  wanted: { id: number; season: number }[],
+  fetchOne: (id: number, season: number) => Promise<T | null>,
+): Promise<Map<string, T | null>> {
+  const key = (id: number, season: number) => `${id}|${season}`;
+  const stored = new Map<string, { value: T | null; checkedAt: number }>();
+  for (const r of db.prepare('SELECT * FROM tmdb_runtimes WHERE kind = ?').all(kind) as Record<string, any>[]) {
+    stored.set(key(r.tmdb_id, r.season), { value: JSON.parse(r.runtimes), checkedAt: r.checked_at });
+  }
+  const unique = [...new Map(wanted.map((w) => [key(w.id, w.season), w])).values()];
+  if (tmdbEnabled()) {
+    const stale = unique.filter((w) => (stored.get(key(w.id, w.season))?.checkedAt ?? 0) < now() - RECHECK_AFTER);
+    const save = db.prepare(
+      `INSERT INTO tmdb_runtimes (kind, tmdb_id, season, runtimes, checked_at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(kind, tmdb_id, season) DO UPDATE SET runtimes = excluded.runtimes, checked_at = excluded.checked_at`,
+    );
+    await pool(kind === 'movie' ? 'movie runtimes' : 'season runtimes', stale, async (w) => {
+      const value = await fetchOne(w.id, w.season);
+      save.run(kind, w.id, w.season, JSON.stringify(value), now());
+      stored.set(key(w.id, w.season), { value, checkedAt: now() });
+      return value != null;
+    });
+  }
+  return new Map(unique.map((w) => [key(w.id, w.season), stored.get(key(w.id, w.season))?.value ?? null]));
+}
+
+/** TMDB runtime in minutes by movie id; movies without one are missing. */
+export async function movieRuntimes(ids: number[]): Promise<Map<number, number>> {
+  const found = await runtimes('movie', ids.map((id) => ({ id, season: -1 })), async (id) => {
+    const d = await call<{ runtime?: number }>(`/movie/${id}`, {});
+    return d?.runtime || null;
+  });
+  const out = new Map<number, number>();
+  for (const [k, minutes] of found) if (minutes) out.set(Number(k.split('|')[0]), minutes);
+  return out;
+}
+
+/** Episode runtimes in minutes for each "<show id>|<season>". */
+export async function seasonRuntimes(seasons: { id: number; season: number }[]): Promise<Map<string, Record<string, number>>> {
+  const found = await runtimes('season', seasons, async (id, season) => {
+    const d = await call<{ episodes?: { episode_number: number; runtime?: number | null }[] }>(`/tv/${id}/season/${season}`, {});
+    if (!d) return null;
+    return Object.fromEntries((d.episodes ?? []).filter((e) => e.runtime).map((e) => [String(e.episode_number), e.runtime!]));
+  });
+  const out = new Map<string, Record<string, number>>();
+  for (const [k, v] of found) if (v) out.set(k, v);
+  return out;
+}

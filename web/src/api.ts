@@ -41,6 +41,8 @@ export interface Me {
   alertsEnabled: boolean;
   digestEnabled: boolean;
   recsEnabled: boolean;
+  shortThreshold: number;
+  shortThresholds: number[];
 }
 
 export interface Airing {
@@ -158,10 +160,12 @@ export interface Rule {
 }
 
 export interface ToolsSummary {
-  duplicates: { count: number; scanning: boolean };
+  scanning: boolean;
+  duplicates: { count: number };
+  short: { count: number };
 }
 
-export interface DuplicateCopy {
+export interface LibraryCopy {
   ratingKey: string;
   mediaId: number;
   title: string;
@@ -174,6 +178,9 @@ export interface DuplicateCopy {
   container: string | null;
   file: string | null;
   parts: number;
+}
+
+export interface DuplicateCopy extends LibraryCopy {
   short: boolean;
 }
 
@@ -194,4 +201,25 @@ export interface Duplicates {
   scannedAt: number | null;
   scanning: boolean;
   groups: DuplicateGroup[];
+}
+
+export interface ShortRecording extends LibraryCopy {
+  kind: 'episode' | 'movie';
+  show: string | null;
+  season: number | null;
+  episode: number | null;
+  airDate: string | null;
+  year: number | null;
+  reference: number;
+  basis: 'season' | 'show' | 'tmdb';
+  ratio: number;
+  ignored: boolean;
+}
+
+export interface ShortRecordings {
+  scannedAt: number | null;
+  scanning: boolean;
+  threshold: number;
+  moviesUnchecked: number;
+  recordings: ShortRecording[];
 }

@@ -1,39 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { api, type DuplicateCopy, type DuplicateGroup, type Duplicates as DuplicatesData } from '../api';
+import { api, type DuplicateGroup, type Duplicates as DuplicatesData } from '../api';
 import { useApp } from '../app';
-import { localeTag } from '../i18n';
-import { formatDate, formatDuration, formatResolution, formatSize } from '../format';
-
-const pad = (n: number) => String(n).padStart(2, '0');
+import { recordingLabel, RecordingLine, ScanStatus, useToolData } from '../components/Recording';
 
 /** Duplicate recordings in the Plex library, with a Plex Web link per copy (removal happens in Plex). */
 export function Duplicates() {
   const { t } = useTranslation();
   const { reloadTools } = useApp();
-  const [data, setData] = useState<DuplicatesData | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, setData, refresh, error } = useToolData<DuplicatesData>('/api/tools/duplicates');
   const [query, setQuery] = useState('');
   const [showIgnored, setShowIgnored] = useState(false);
-
-  useEffect(() => {
-    void api<DuplicatesData>('/api/tools/duplicates').then(setData);
-  }, []);
-
-  const rescan = async () => {
-    setScanning(true);
-    setError(null);
-    try {
-      setData(await api<DuplicatesData>('/api/tools/duplicates/scan', { method: 'POST' }));
-      await reloadTools();
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setScanning(false);
-    }
-  };
 
   const setIgnored = async (group: DuplicateGroup, ignored: boolean) => {
     await api(`/api/tools/duplicates/ignored/${encodeURIComponent(group.key)}`, { method: ignored ? 'PUT' : 'DELETE' });
@@ -70,15 +48,7 @@ export function Duplicates() {
       <h1>{t('duplicates.title')}</h1>
       <p className="muted">{t('duplicates.text')}</p>
 
-      <div className="status-row">
-        <span className="muted small">
-          {data?.scannedAt ? t('duplicates.scannedAt', { date: formatDate(data.scannedAt) }) : t('duplicates.notScanned')}
-        </span>
-        <button onClick={rescan} disabled={scanning || data?.scanning}>
-          {scanning || data?.scanning ? t('duplicates.scanning') : t('duplicates.rescan')}
-        </button>
-        {error && <span className="error small">{error}</span>}
-      </div>
+      <ScanStatus scannedAt={data?.scannedAt ?? null} scanning={!!data?.scanning} error={error} onRefresh={refresh} />
 
       {data && (
         <>
@@ -117,19 +87,12 @@ export function Duplicates() {
   );
 }
 
-function groupLabel(g: DuplicateGroup): string {
-  if (g.kind === 'movie') return g.year ? `${g.title} (${g.year})` : g.title;
-  if (g.episode != null) return `S${pad(g.season ?? 0)}E${pad(g.episode)} · ${g.title}`;
-  const date = g.airDate ? new Date(`${g.airDate}T12:00:00`).toLocaleDateString(localeTag(), { dateStyle: 'medium' }) : '';
-  return [g.title, date].filter(Boolean).join(' · ');
-}
-
 function Group({ group, onIgnore }: { group: DuplicateGroup; onIgnore: (g: DuplicateGroup, ignored: boolean) => void }) {
   const { t } = useTranslation();
   return (
     <div className={`dup-group${group.ignored ? ' dimmed' : ''}`}>
       <div className="dup-head">
-        <b className="grow">{groupLabel(group)}</b>
+        <b className="grow">{recordingLabel(group)}</b>
         <span className="muted small">{t('duplicates.copies', { count: group.copies.length })}</span>
         <button className="small" onClick={() => onIgnore(group, !group.ignored)} title={group.ignored ? undefined : t('duplicates.ignoreHint')}>
           {group.ignored ? t('duplicates.unignore') : t('duplicates.ignore')}
@@ -137,38 +100,15 @@ function Group({ group, onIgnore }: { group: DuplicateGroup; onIgnore: (g: Dupli
       </div>
       <ul className="dup-copies">
         {group.copies.map((c) => (
-          <Copy key={c.mediaId} copy={c} groupTitle={group.title} />
+          <li key={c.mediaId}>
+            <RecordingLine
+              copy={c}
+              badges={c.short && <span className="badge warn">{t('duplicates.short')}</span>}
+              extra={c.title !== group.title && <span className="muted">{c.title}</span>}
+            />
+          </li>
         ))}
       </ul>
     </div>
-  );
-}
-
-function Copy({ copy, groupTitle }: { copy: DuplicateCopy; groupTitle: string }) {
-  const { t } = useTranslation();
-  const { plexLink } = useApp();
-  const quality = [copy.resolution && formatResolution(copy.resolution), ...[copy.videoCodec, copy.audioCodec, copy.container].map((x) => x?.toUpperCase())]
-    .filter(Boolean)
-    .join(' · ');
-  return (
-    <li>
-      <div className="dup-line">
-        <a className="when" href={plexLink(`/library/metadata/${copy.ratingKey}`)} target="_blank" rel="noreferrer">
-          {t('duplicates.openInPlex')}
-        </a>
-        <span className="dup-duration">{copy.duration != null ? formatDuration(copy.duration) : '?'}</span>
-        {copy.short && <span className="badge warn">{t('duplicates.short')}</span>}
-        {copy.size != null && <span>{formatSize(copy.size)}</span>}
-        {quality && <span className="muted">{quality}</span>}
-        {copy.addedAt != null && <span className="muted">{t('duplicates.added', { date: formatDate(copy.addedAt) })}</span>}
-        {copy.title !== groupTitle && <span className="muted">{copy.title}</span>}
-      </div>
-      {copy.file && (
-        <div className="dup-file muted small">
-          {copy.file}
-          {copy.parts > 1 && ` ${t('duplicates.parts', { count: copy.parts })}`}
-        </div>
-      )}
-    </li>
   );
 }

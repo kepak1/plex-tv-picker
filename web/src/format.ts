@@ -29,7 +29,8 @@ export function formatDuration(ms: number): string {
 export function formatSize(bytes: number): string {
   const gb = bytes / 1e9;
   const value = gb >= 1 ? gb : bytes / 1e6;
-  return `${value.toLocaleString(localeTag(), { maximumFractionDigits: gb >= 1 ? 1 : 0 })} ${gb >= 1 ? 'GB' : 'MB'}`;
+  // Tiny files (failed recordings) keep a decimal instead of showing "0 MB".
+  return `${value.toLocaleString(localeTag(), { maximumFractionDigits: gb >= 1 || value < 10 ? 1 : 0 })} ${gb >= 1 ? 'GB' : 'MB'}`;
 }
 
 /** Plex video resolution ("1080", "sd", "4k") as shown in Plex. */

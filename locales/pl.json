@@ -185,7 +185,9 @@
     "testSent": "Wysłano testowy mail",
     "smtpMissing": "Wysyłka maili nie jest skonfigurowana (brak SMTP_HOST).",
     "recs": "Polecane w dziennym mailu",
-    "recsHint": "20 najlepszych tytułów do nagrania z całego programu, wybranych na podstawie historii oglądania w Plex (bez ukrytych, zaplanowanych i tych, które masz)."
+    "recsHint": "20 najlepszych tytułów do nagrania z całego programu, wybranych na podstawie historii oglądania w Plex (bez ukrytych, zaplanowanych i tych, które masz).",
+    "shortThreshold": "Próg za krótkich nagrań",
+    "shortThresholdHint": "Nagranie krótsze niż ten procent oczekiwanej długości trafia do narzędzia „Za krótkie nagrania”."
   },
   "time": {
     "today": "Dziś",
@@ -266,16 +268,22 @@
   },
   "tools": {
     "title": "Narzędzia",
-    "text": "Pomocnicze narzędzia do biblioteki Plex. RecPick tylko je odczytuje, niczego w Plexie nie zmienia."
+    "text": "Pomocnicze narzędzia do biblioteki Plex. RecPick tylko je odczytuje, niczego w Plexie nie zmienia.",
+    "scannedAt": "Ostatnie sprawdzenie: {{date}}",
+    "notScanned": "Biblioteka nie była jeszcze sprawdzana.",
+    "rescan": "Odśwież",
+    "scanning": "Sprawdzam…",
+    "openInPlex": "Otwórz w Plexie",
+    "added": "dodano {{date}}",
+    "parts_one": "({{count}} część)",
+    "parts_few": "({{count}} części)",
+    "parts_many": "({{count}} części)",
+    "parts_other": "({{count}} części)"
   },
   "duplicates": {
     "title": "Duplikaty nagrań",
     "tile": "Odcinki i filmy zapisane w bibliotece więcej niż raz.",
     "text": "Odcinki i filmy, które są w bibliotece więcej niż raz: jako kilka wersji jednej pozycji albo jako osobne pozycje. Porównaj długość i usuń zbędne kopie w Plexie.",
-    "scannedAt": "Ostatnie sprawdzenie: {{date}}",
-    "notScanned": "Biblioteka nie była jeszcze sprawdzana.",
-    "rescan": "Odśwież",
-    "scanning": "Sprawdzam…",
     "search": "Szukaj serialu, tytułu albo pliku…",
     "summary_one": "{{count}} duplikat",
     "summary_few": "{{count}} duplikaty",
@@ -292,12 +300,30 @@
     "ignore": "To nie duplikat",
     "ignoreHint": "Ukrywa grupę dla wszystkich, dopóki nie zmieni się zestaw kopii.",
     "unignore": "Przywróć",
-    "openInPlex": "Otwórz w Plexie",
-    "short": "Prawdopodobnie ucięte",
-    "added": "dodano {{date}}",
-    "parts_one": "({{count}} część)",
-    "parts_few": "({{count}} części)",
-    "parts_many": "({{count}} części)",
-    "parts_other": "({{count}} części)"
+    "short": "Prawdopodobnie ucięte"
+  },
+  "short": {
+    "title": "Za krótkie nagrania",
+    "tile": "Nagrania wyraźnie krótsze, niż powinny być.",
+    "text": "Nagrania wyraźnie krótsze, niż powinny. Odcinki porównuję z typową długością nagrań sezonu albo serialu, a gdy serial ma 1-2 nagrania, z długością odcinka z TMDB. Filmy porównuję z czasem trwania z TMDB.",
+    "textNoTmdb": "Odcinki wyraźnie krótsze od typowej długości nagrań w swoim sezonie albo serialu. Z kluczem TMDB sprawdzane są też filmy i seriale z 1-2 nagraniami.",
+    "threshold": "Pokazuję nagrania krótsze niż {{threshold}}% oczekiwanej długości.",
+    "change": "Zmień w ustawieniach",
+    "summary_one": "{{count}} nagranie",
+    "summary_few": "{{count}} nagrania",
+    "summary_many": "{{count}} nagrań",
+    "summary_other": "{{count}} nagrania",
+    "none": "Nie znaleziono za krótkich nagrań.",
+    "ignore": "To jest OK",
+    "ignoreHint": "Ukrywa nagranie dla wszystkich, dopóki nie zmieni się plik.",
+    "basis": {
+      "season": "mediana sezonu {{length}}",
+      "show": "mediana serialu {{length}}",
+      "tmdb": "TMDB {{length}}"
+    },
+    "moviesUnchecked_one": "{{count}} film bez czasu trwania w TMDB nie był sprawdzany.",
+    "moviesUnchecked_few": "{{count}} filmy bez czasu trwania w TMDB nie były sprawdzane.",
+    "moviesUnchecked_many": "{{count}} filmów bez czasu trwania w TMDB nie było sprawdzanych.",
+    "moviesUnchecked_other": "{{count}} filmu bez czasu trwania w TMDB nie było sprawdzanych."
   }
 }

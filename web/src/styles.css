@@ -245,3 +245,4 @@ button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border
 .dup-duration { font-weight: 700; font-variant-numeric: tabular-nums; }
 .dup-file { margin-top: 3px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .badge.warn { color: #f0b429; border-color: rgba(240, 180, 41, 0.45); }
+.dup-copies.single { padding-top: 7px; font-size: 13px; }
