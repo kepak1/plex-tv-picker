@@ -6,6 +6,7 @@ All notable changes to RecPick are listed here. Versions follow [Semantic Versio
 
 ### Fixed
 - Delete script: when run without permission to delete some of the files (recordings usually belong to the Plex user), it now stops before asking, deletes nothing and tells you to run it with `sudo`, instead of asking about every write-protected file and failing half way. Files are removed with `rm -f`, so the single confirmation covers all of them.
+- Delete script: running it with `sh` (dash on Debian/Ubuntu) failed with `Syntax error: "(" unexpected`; it now switches to bash by itself.
 
 ## [0.5.0-alpha] - 2026-10-27
 

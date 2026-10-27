@@ -95,6 +95,9 @@ export function buildScript(
     '#!/usr/bin/env bash',
     `# ${text.header}`,
     `# ${text.summary(paths.length, formatSize(size))}`,
+    // `sh script.sh` runs dash on Debian/Ubuntu, which has no arrays: switch to bash first.
+    // Shells run a script line by line, so this happens before the array below is parsed.
+    'if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi',
     'set -u',
     '',
     'files=(',
