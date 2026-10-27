@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { api, type ShortRecording, type ShortRecordings as ShortData } from '../api';
 import { useApp } from '../app';
 import { recordingLabel, RecordingLine, ScanStatus, useToolData } from '../components/Recording';
+import { SelectionBar, useSelection } from '../components/DeleteScript';
 import { formatDuration } from '../format';
 
 /** Recordings much shorter than their season, show or TMDB runtime; removal or re-recording happens in Plex. */
@@ -13,6 +14,7 @@ export function ShortRecordings() {
   const { data, setData, refresh, error } = useToolData<ShortData>('/api/tools/short');
   const [query, setQuery] = useState('');
   const [showIgnored, setShowIgnored] = useState(false);
+  const selection = useSelection('short', data?.recordings ?? null);
 
   const setIgnored = async (r: ShortRecording, ignored: boolean) => {
     await api(`/api/tools/short/ignored/${r.mediaId}`, { method: ignored ? 'PUT' : 'DELETE' });
@@ -40,6 +42,9 @@ export function ShortRecordings() {
     return { shows: [...shows.entries()], movies };
   }, [visible]);
 
+  const selectedCopies = (data?.recordings ?? []).filter((r) => selection.selected.has(r.mediaId));
+  const suggest = () => selection.add(visible.filter((r) => !r.ignored).map((r) => r.mediaId));
+
   const ignoredCount = data?.recordings.filter((r) => r.ignored).length ?? 0;
   const active = (data?.recordings.length ?? 0) - ignoredCount;
 
@@ -56,6 +61,7 @@ export function ShortRecordings() {
           <p className="muted small">
             {t('short.threshold', { threshold: data.threshold })} <Link to="/settings">{t('short.change')}</Link>
           </p>
+          <SelectionBar tool="short" copies={selectedCopies} onSuggest={suggest} onClear={selection.clear} />
           <input className="search" type="search" placeholder={t('duplicates.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
           <div className="status-row">
             <span>{t('short.summary', { count: active })}</span>
@@ -73,7 +79,7 @@ export function ShortRecordings() {
             <section key={show} className="dup-section">
               <h2>{show}</h2>
               {recordings.map((r) => (
-                <Row key={r.mediaId} recording={r} onIgnore={setIgnored} />
+                <Row key={r.mediaId} recording={r} onIgnore={setIgnored} selected={selection.selected.has(r.mediaId)} onSelect={selection.toggle} />
               ))}
             </section>
           ))}
@@ -81,7 +87,7 @@ export function ShortRecordings() {
             <section className="dup-section">
               <h2>{t('duplicates.movies')}</h2>
               {sections.movies.map((r) => (
-                <Row key={r.mediaId} recording={r} onIgnore={setIgnored} />
+                <Row key={r.mediaId} recording={r} onIgnore={setIgnored} selected={selection.selected.has(r.mediaId)} onSelect={selection.toggle} />
               ))}
             </section>
           )}
@@ -92,7 +98,17 @@ export function ShortRecordings() {
   );
 }
 
-function Row({ recording: r, onIgnore }: { recording: ShortRecording; onIgnore: (r: ShortRecording, ignored: boolean) => void }) {
+function Row({
+  recording: r,
+  onIgnore,
+  selected,
+  onSelect,
+}: {
+  recording: ShortRecording;
+  onIgnore: (r: ShortRecording, ignored: boolean) => void;
+  selected: boolean;
+  onSelect: (mediaId: number) => void;
+}) {
   const { t } = useTranslation();
   return (
     <div className={`dup-group${r.ignored ? ' dimmed' : ''}`}>
@@ -105,6 +121,8 @@ function Row({ recording: r, onIgnore }: { recording: ShortRecording; onIgnore: 
       <div className="dup-copies single">
         <RecordingLine
           copy={r}
+          selected={selected}
+          onSelect={onSelect}
           badges={
             <>
               <span className="badge warn">{Math.floor(r.ratio * 100)}%</span>

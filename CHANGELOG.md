@@ -2,6 +2,11 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
+## [0.5.0-alpha] - 2026-10-27
+
+### Added
+- Delete script on *Duplicate recordings* and *Short recordings*: tick files (or use *Select suspicious*), see their count and total size, and download a bash script that lists them, skips missing ones, asks for confirmation and removes them with `rm`. Multi-part copies include every part. An optional path prefix mapping covers running the script where the files live under a different path. The selection and mapping are remembered in the browser. The duplicates page warns when every copy of an item is selected. RecPick still never deletes anything itself ([#10](https://github.com/kepak1/recpick/issues/10)).
+
 ## [0.4.0-alpha] - 2026-10-27
 
 ### Added
@@ -50,6 +55,7 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.5.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.0-alpha
 [0.4.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.4.0-alpha
 [0.3.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.3.0-alpha
 [0.2.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.2.0-alpha

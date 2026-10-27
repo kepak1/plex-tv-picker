@@ -49,7 +49,10 @@ export interface LibraryCopy {
   videoCodec: string | null;
   audioCodec: string | null;
   container: string | null;
+  /** First part's path. */
   file: string | null;
+  /** Every part's path (a copy can be split into several files). */
+  files: string[];
   parts: number;
 }
 
@@ -91,6 +94,7 @@ export function copiesOf(m: LibraryMetadata): LibraryCopy[] {
       audioCodec: media.audioCodec ?? null,
       container: media.container ?? null,
       file: parts[0]?.file ?? null,
+      files: parts.map((p) => p.file).filter((f): f is string => !!f),
       parts: parts.length,
     };
   });

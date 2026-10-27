@@ -297,5 +297,28 @@
     },
     "moviesUnchecked_one": "{{count}} movie without a TMDB runtime was not checked.",
     "moviesUnchecked_other": "{{count}} movies without a TMDB runtime were not checked."
+  },
+  "script": {
+    "select": "Select for deletion",
+    "selected_one": "{{count}} file selected",
+    "selected_other": "{{count}} files selected",
+    "suggest": "Select suspicious",
+    "clear": "Clear",
+    "paths": "Paths…",
+    "pathFrom": "Path in Plex",
+    "pathTo": "Path on the machine that runs the script",
+    "download": "Download delete script",
+    "allCopies_one": "Careful, every copy of {{count}} item is selected:",
+    "allCopies_other": "Careful, every copy of {{count}} items is selected:",
+    "howTo": "RecPick never deletes anything itself. Run the downloaded script on the machine with the files: bash recpick-delete-….sh (with sudo if the files belong to another user). It lists the files and asks before deleting. Then scan the library in Plex and empty the trash.",
+    "header": "Delete script from RecPick {{version}}, {{date}}. Afterwards scan the library in Plex and empty the trash.",
+    "missing": "File not found, skipping",
+    "nothing": "None of the files exist any more.",
+    "confirm": "Delete these files?",
+    "cancelled": "Cancelled, nothing was deleted.",
+    "done": "Done. Scan the library in Plex and empty the trash.",
+    "yes": "y",
+    "summary_one": "{{count}} file, {{size}}",
+    "summary_other": "{{count}} files, {{size}}"
   }
 }

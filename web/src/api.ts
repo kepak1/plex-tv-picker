@@ -177,6 +177,8 @@ export interface LibraryCopy {
   audioCodec: string | null;
   container: string | null;
   file: string | null;
+  /** Missing in scans made before 0.5.0. */
+  files?: string[];
   parts: number;
 }
 

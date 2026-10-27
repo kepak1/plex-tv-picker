@@ -23,7 +23,7 @@ Plex's *Live TV → Browse* shows the same titles you already skipped over and o
 - **Optional daily email** with everything new in the guide and/or your recommendations.
 - **Open in Plex**: every title and airing links straight to its Plex Web page with the *Record* button.
 - **Search Google** button for every title.
-- **Tools**: a separate tab for library helpers. The first one finds **duplicate recordings**: episodes and movies stored more than once (several versions of one item or separate items), with each copy's length, size, quality, date added and file path, a warning for copies that look cut short, and a link to Plex to remove the extras. Groups that aren't real duplicates can be marked as such. The second one finds **short recordings**: episodes much shorter than the typical recording of their season or show (or than TMDB's episode runtime for shows with only 1-2 recordings) and, with TMDB, movies shorter than their TMDB runtime. The threshold (default 80%) is set per user in *Settings*.
+- **Tools**: a separate tab for library helpers. The first one finds **duplicate recordings**: episodes and movies stored more than once (several versions of one item or separate items), with each copy's length, size, quality, date added and file path, a warning for copies that look cut short, and a link to Plex to remove the extras. Groups that aren't real duplicates can be marked as such. The second one finds **short recordings**: episodes much shorter than the typical recording of their season or show (or than TMDB's episode runtime for shows with only 1-2 recordings) and, with TMDB, movies shorter than their TMDB runtime. The threshold (default 80%) is set per user in *Settings*. On both pages you can tick files and download a bash script that deletes them after a confirmation (with an optional path prefix mapping); RecPick itself never deletes anything.
 - **Sign in with Plex**: only users of your Plex server get in, and each user has their own hidden list, wishlist, email and language.
 - **Translations**: English and Polish; adding a language is one JSON file.
 
@@ -130,7 +130,7 @@ RecPick runs entirely on your server and has no telemetry. Besides your Plex ser
 
 - Tested with the Plex cloud guide (`tv.plex.providers.epg.cloud`). XMLTV guides are not supported yet.
 - The *Sports* section of the guide is skipped.
-- RecPick only reads from Plex. Recording is started in Plex itself (the app does not create recording rules), and duplicate copies are removed in Plex too.
+- RecPick only reads from Plex. Recording is started in Plex itself (the app does not create recording rules), and unwanted copies are removed in Plex or with the generated delete script, which you run yourself.
 
 ## Support
 

@@ -23,7 +23,20 @@ export function recordingLabel(r: {
 }
 
 /** One file: Plex link, length, size, quality, date added and path. `badges` go after the length. */
-export function RecordingLine({ copy, badges, extra }: { copy: LibraryCopy; badges?: ReactNode; extra?: ReactNode }) {
+export function RecordingLine({
+  copy,
+  badges,
+  extra,
+  selected,
+  onSelect,
+}: {
+  copy: LibraryCopy;
+  badges?: ReactNode;
+  extra?: ReactNode;
+  /** With `onSelect`, a checkbox for the delete script. */
+  selected?: boolean;
+  onSelect?: (mediaId: number) => void;
+}) {
   const { t } = useTranslation();
   const { plexLink } = useApp();
   const quality = [copy.resolution && formatResolution(copy.resolution), ...[copy.videoCodec, copy.audioCodec, copy.container].map((x) => x?.toUpperCase())]
@@ -32,6 +45,9 @@ export function RecordingLine({ copy, badges, extra }: { copy: LibraryCopy; badg
   return (
     <>
       <div className="dup-line">
+        {onSelect && (
+          <input type="checkbox" checked={!!selected} onChange={() => onSelect(copy.mediaId)} aria-label={t('script.select')} />
+        )}
         <a className="when" href={plexLink(`/library/metadata/${copy.ratingKey}`)} target="_blank" rel="noreferrer">
           {t('tools.openInPlex')}
         </a>
