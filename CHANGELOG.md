@@ -6,6 +6,7 @@ All notable changes to RecPick are listed here. Versions follow [Semantic Versio
 
 ### Added
 - Delete script on *Duplicate recordings* and *Short recordings*: tick files (or use *Select suspicious*), see their count and total size, and download a bash script that lists them, skips missing ones, asks for confirmation and removes them with `rm`. Multi-part copies include every part. An optional path prefix mapping covers running the script where the files live under a different path. The selection and mapping are remembered in the browser. The duplicates page warns when every copy of an item is selected. RecPick still never deletes anything itself ([#10](https://github.com/kepak1/recpick/issues/10)).
+- *Short recordings*: a movie can be added to the wishlist with one click, or all selected movies at once, so you get an alert when it airs again (once it is no longer in the library).
 
 ## [0.4.0-alpha] - 2026-10-27
 

@@ -296,7 +296,12 @@
       "tmdb": "TMDB {{length}}"
     },
     "moviesUnchecked_one": "{{count}} movie without a TMDB runtime was not checked.",
-    "moviesUnchecked_other": "{{count}} movies without a TMDB runtime were not checked."
+    "moviesUnchecked_other": "{{count}} movies without a TMDB runtime were not checked.",
+    "wish": "Add to wishlist",
+    "wishHint": "Adds the movie to your wishlist so you hear about its next airing. Alerts start once the movie is no longer in the library.",
+    "onWishlist": "On wishlist",
+    "wishSelected_one": "Add {{count}} movie to wishlist",
+    "wishSelected_other": "Add {{count}} movies to wishlist"
   },
   "script": {
     "select": "Select for deletion",

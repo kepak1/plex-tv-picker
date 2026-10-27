@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LibraryCopy } from '../api';
 import { useApp } from '../app';
@@ -132,12 +132,15 @@ export function SelectionBar({
   tool,
   copies,
   warnings = [],
+  actions,
   onSuggest,
   onClear,
 }: {
   tool: string;
   copies: LibraryCopy[];
   warnings?: string[];
+  /** Extra buttons for the selected copies, shown before the download. */
+  actions?: ReactNode;
   onSuggest: () => void;
   onClear: () => void;
 }) {
@@ -186,6 +189,7 @@ export function SelectionBar({
         )}
         <button className="small link" onClick={() => setShowPaths((v) => !v)}>{t('script.paths')}</button>
         <span className="spacer" />
+        {actions}
         <button className="primary small" disabled={copies.length === 0} onClick={download}>
           {t('script.download')}
         </button>

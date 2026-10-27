@@ -324,7 +324,14 @@
     "moviesUnchecked_one": "{{count}} film bez czasu trwania w TMDB nie był sprawdzany.",
     "moviesUnchecked_few": "{{count}} filmy bez czasu trwania w TMDB nie były sprawdzane.",
     "moviesUnchecked_many": "{{count}} filmów bez czasu trwania w TMDB nie było sprawdzanych.",
-    "moviesUnchecked_other": "{{count}} filmu bez czasu trwania w TMDB nie było sprawdzanych."
+    "moviesUnchecked_other": "{{count}} filmu bez czasu trwania w TMDB nie było sprawdzanych.",
+    "wish": "Do listy życzeń",
+    "wishHint": "Dodaje film do listy życzeń, żeby dostać powiadomienie o kolejnej emisji. Alert przyjdzie, gdy filmu nie będzie już w bibliotece.",
+    "onWishlist": "Na liście życzeń",
+    "wishSelected_one": "{{count}} film do listy życzeń",
+    "wishSelected_few": "{{count}} filmy do listy życzeń",
+    "wishSelected_many": "{{count}} filmów do listy życzeń",
+    "wishSelected_other": "{{count}} filmu do listy życzeń"
   },
   "script": {
     "select": "Zaznacz do usunięcia",
