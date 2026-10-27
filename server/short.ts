@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS short_ignores (
 
 export interface ShortRecording extends LibraryCopy {
   kind: 'episode' | 'movie';
+  /** Plex guid of the movie or episode (for adding a movie to the wishlist). */
+  guid: string;
   show: string | null;
   season: number | null;
   episode: number | null;
@@ -72,6 +74,7 @@ function recording(m: LibraryMetadata, copy: LibraryCopy & { duration: number },
   return {
     ...copy,
     kind,
+    guid: m.guid,
     show: kind === 'episode' ? (m.grandparentTitle ?? null) : null,
     season: kind === 'episode' ? (m.parentIndex ?? null) : null,
     episode: kind === 'episode' ? (m.index ?? null) : null,

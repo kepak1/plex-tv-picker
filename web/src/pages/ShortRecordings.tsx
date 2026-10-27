@@ -4,15 +4,17 @@ import { Link } from 'react-router-dom';
 import { api, type ShortRecording, type ShortRecordings as ShortData } from '../api';
 import { useApp } from '../app';
 import { recordingLabel, RecordingLine, ScanStatus, useToolData } from '../components/Recording';
+import { SelectionBar, useSelection } from '../components/DeleteScript';
 import { formatDuration } from '../format';
 
 /** Recordings much shorter than their season, show or TMDB runtime; removal or re-recording happens in Plex. */
 export function ShortRecordings() {
   const { t } = useTranslation();
-  const { config, reloadTools } = useApp();
+  const { config, reloadTools, wishes, reloadWishes } = useApp();
   const { data, setData, refresh, error } = useToolData<ShortData>('/api/tools/short');
   const [query, setQuery] = useState('');
   const [showIgnored, setShowIgnored] = useState(false);
+  const selection = useSelection('short', data?.recordings ?? null);
 
   const setIgnored = async (r: ShortRecording, ignored: boolean) => {
     await api(`/api/tools/short/ignored/${r.mediaId}`, { method: ignored ? 'PUT' : 'DELETE' });
@@ -40,6 +42,33 @@ export function ShortRecordings() {
     return { shows: [...shows.entries()], movies };
   }, [visible]);
 
+  const selectedCopies = (data?.recordings ?? []).filter((r) => selection.selected.has(r.mediaId));
+  // Movies re-recorded later: a short one goes to the wishlist so its next airing is reported.
+  const onWishlist = (r: ShortRecording) =>
+    wishes.some(
+      (w) =>
+        w.kind === 'title' &&
+        w.type !== 'show' &&
+        ((r.guid && w.guid === r.guid) || (w.title.toLocaleLowerCase() === r.title.toLocaleLowerCase() && (!w.year || !r.year || Math.abs(w.year - r.year) <= 1))),
+    );
+  const [adding, setAdding] = useState(false);
+  const addToWishlist = async (movies: ShortRecording[]) => {
+    setAdding(true);
+    try {
+      // One wish per movie, even when several of its copies are selected.
+      const unique = [...new Map(movies.filter((r) => !onWishlist(r)).map((r) => [r.guid ?? `${r.title}|${r.year}`, r])).values()];
+      for (const r of unique) {
+        await api('/api/wishlist', { method: 'POST', json: { kind: 'title', type: 'movie', guid: r.guid ?? null, title: r.title, year: r.year } });
+      }
+      await reloadWishes();
+    } finally {
+      setAdding(false);
+    }
+  };
+  const selectedMovies = selectedCopies.filter((r) => r.kind === 'movie' && !onWishlist(r));
+
+  const suggest = () => selection.add(visible.filter((r) => !r.ignored).map((r) => r.mediaId));
+
   const ignoredCount = data?.recordings.filter((r) => r.ignored).length ?? 0;
   const active = (data?.recordings.length ?? 0) - ignoredCount;
 
@@ -56,6 +85,19 @@ export function ShortRecordings() {
           <p className="muted small">
             {t('short.threshold', { threshold: data.threshold })} <Link to="/settings">{t('short.change')}</Link>
           </p>
+          <SelectionBar
+            tool="short"
+            copies={selectedCopies}
+            onSuggest={suggest}
+            onClear={selection.clear}
+            actions={
+              selectedMovies.length > 0 && (
+                <button className="small" disabled={adding} onClick={() => addToWishlist(selectedMovies)}>
+                  ★ {t('short.wishSelected', { count: new Set(selectedMovies.map((r) => r.guid ?? r.title)).size })}
+                </button>
+              )
+            }
+          />
           <input className="search" type="search" placeholder={t('duplicates.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
           <div className="status-row">
             <span>{t('short.summary', { count: active })}</span>
@@ -73,7 +115,15 @@ export function ShortRecordings() {
             <section key={show} className="dup-section">
               <h2>{show}</h2>
               {recordings.map((r) => (
-                <Row key={r.mediaId} recording={r} onIgnore={setIgnored} />
+                <Row
+                  key={r.mediaId}
+                  recording={r}
+                  onIgnore={setIgnored}
+                  selected={selection.selected.has(r.mediaId)}
+                  onSelect={selection.toggle}
+                  wished={onWishlist(r)}
+                  onWish={adding ? undefined : () => addToWishlist([r])}
+                />
               ))}
             </section>
           ))}
@@ -81,7 +131,15 @@ export function ShortRecordings() {
             <section className="dup-section">
               <h2>{t('duplicates.movies')}</h2>
               {sections.movies.map((r) => (
-                <Row key={r.mediaId} recording={r} onIgnore={setIgnored} />
+                <Row
+                  key={r.mediaId}
+                  recording={r}
+                  onIgnore={setIgnored}
+                  selected={selection.selected.has(r.mediaId)}
+                  onSelect={selection.toggle}
+                  wished={onWishlist(r)}
+                  onWish={adding ? undefined : () => addToWishlist([r])}
+                />
               ))}
             </section>
           )}
@@ -92,12 +150,34 @@ export function ShortRecordings() {
   );
 }
 
-function Row({ recording: r, onIgnore }: { recording: ShortRecording; onIgnore: (r: ShortRecording, ignored: boolean) => void }) {
+function Row({
+  recording: r,
+  onIgnore,
+  selected,
+  onSelect,
+  wished,
+  onWish,
+}: {
+  recording: ShortRecording;
+  onIgnore: (r: ShortRecording, ignored: boolean) => void;
+  selected: boolean;
+  onSelect: (mediaId: number) => void;
+  wished?: boolean;
+  onWish?: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <div className={`dup-group${r.ignored ? ' dimmed' : ''}`}>
       <div className="dup-head">
         <b className="grow">{recordingLabel(r)}</b>
+        {r.kind === 'movie' &&
+          (wished ? (
+            <span className="badge ok">★ {t('short.onWishlist')}</span>
+          ) : (
+            <button className="small" disabled={!onWish} onClick={onWish} title={t('short.wishHint')}>
+              ★ {t('short.wish')}
+            </button>
+          ))}
         <button className="small" onClick={() => onIgnore(r, !r.ignored)} title={r.ignored ? undefined : t('short.ignoreHint')}>
           {r.ignored ? t('duplicates.unignore') : t('short.ignore')}
         </button>
@@ -105,6 +185,8 @@ function Row({ recording: r, onIgnore }: { recording: ShortRecording; onIgnore: 
       <div className="dup-copies single">
         <RecordingLine
           copy={r}
+          selected={selected}
+          onSelect={onSelect}
           badges={
             <>
               <span className="badge warn">{Math.floor(r.ratio * 100)}%</span>

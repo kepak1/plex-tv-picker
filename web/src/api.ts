@@ -177,6 +177,8 @@ export interface LibraryCopy {
   audioCodec: string | null;
   container: string | null;
   file: string | null;
+  /** Missing in scans made before 0.5.0. */
+  files?: string[];
   parts: number;
 }
 
@@ -205,6 +207,8 @@ export interface Duplicates {
 
 export interface ShortRecording extends LibraryCopy {
   kind: 'episode' | 'movie';
+  /** Missing in scans made before 0.5.0. */
+  guid?: string;
   show: string | null;
   season: number | null;
   episode: number | null;

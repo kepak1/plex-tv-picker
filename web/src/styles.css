@@ -246,3 +246,15 @@ button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border
 .dup-file { margin-top: 3px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 .badge.warn { color: #f0b429; border-color: rgba(240, 180, 41, 0.45); }
 .dup-copies.single { padding-top: 7px; font-size: 13px; }
+
+/* Selection for the delete script */
+.selection-bar { position: sticky; top: 52px; z-index: 10; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin: 12px 0 4px; display: grid; gap: 6px; }
+.selection-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.selection-paths { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+.selection-paths input { width: 220px; max-width: 100%; }
+.selection-bar p { margin: 0; }
+.dup-line input[type='checkbox'] { margin: 0; }
+@media (max-width: 760px) {
+  .selection-bar { top: 96px; }
+  .selection-paths .field, .selection-paths input { width: 100%; }
+}

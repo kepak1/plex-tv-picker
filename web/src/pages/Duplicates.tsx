@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { api, type DuplicateGroup, type Duplicates as DuplicatesData } from '../api';
 import { useApp } from '../app';
 import { recordingLabel, RecordingLine, ScanStatus, useToolData } from '../components/Recording';
+import { SelectionBar, useSelection } from '../components/DeleteScript';
 
 /** Duplicate recordings in the Plex library, with a Plex Web link per copy (removal happens in Plex). */
 export function Duplicates() {
@@ -12,6 +13,8 @@ export function Duplicates() {
   const { data, setData, refresh, error } = useToolData<DuplicatesData>('/api/tools/duplicates');
   const [query, setQuery] = useState('');
   const [showIgnored, setShowIgnored] = useState(false);
+  const allCopies = useMemo(() => (data ? data.groups.flatMap((g) => g.copies) : null), [data]);
+  const selection = useSelection('duplicates', allCopies);
 
   const setIgnored = async (group: DuplicateGroup, ignored: boolean) => {
     await api(`/api/tools/duplicates/ignored/${encodeURIComponent(group.key)}`, { method: ignored ? 'PUT' : 'DELETE' });
@@ -39,6 +42,13 @@ export function Duplicates() {
     return { shows: [...shows.entries()], movies };
   }, [visible]);
 
+  const selectedCopies = (allCopies ?? []).filter((c) => selection.selected.has(c.mediaId));
+  // Selecting every copy of an episode would delete it completely; worth a second look.
+  const everyCopy = (data?.groups ?? [])
+    .filter((g) => g.copies.every((c) => selection.selected.has(c.mediaId)))
+    .map((g) => (g.show ? `${g.show} ${recordingLabel(g)}` : recordingLabel(g)));
+  const suggest = () => selection.add(visible.flatMap((g) => g.copies.filter((c) => c.short).map((c) => c.mediaId)));
+
   const ignoredCount = data?.groups.filter((g) => g.ignored).length ?? 0;
   const active = (data?.groups.length ?? 0) - ignoredCount;
 
@@ -52,6 +62,7 @@ export function Duplicates() {
 
       {data && (
         <>
+          <SelectionBar tool="duplicates" copies={selectedCopies} warnings={everyCopy} onSuggest={suggest} onClear={selection.clear} />
           <input className="search" type="search" placeholder={t('duplicates.search')} value={query} onChange={(e) => setQuery(e.target.value)} />
           <div className="status-row">
             <span>{t('duplicates.summary', { count: active })}</span>
@@ -69,7 +80,7 @@ export function Duplicates() {
             <section key={show} className="dup-section">
               <h2>{show}</h2>
               {groups.map((g) => (
-                <Group key={g.key} group={g} onIgnore={setIgnored} />
+                <Group key={g.key} group={g} onIgnore={setIgnored} selected={selection.selected} onSelect={selection.toggle} />
               ))}
             </section>
           ))}
@@ -77,7 +88,7 @@ export function Duplicates() {
             <section className="dup-section">
               <h2>{t('duplicates.movies')}</h2>
               {sections.movies.map((g) => (
-                <Group key={g.key} group={g} onIgnore={setIgnored} />
+                <Group key={g.key} group={g} onIgnore={setIgnored} selected={selection.selected} onSelect={selection.toggle} />
               ))}
             </section>
           )}
@@ -87,7 +98,17 @@ export function Duplicates() {
   );
 }
 
-function Group({ group, onIgnore }: { group: DuplicateGroup; onIgnore: (g: DuplicateGroup, ignored: boolean) => void }) {
+function Group({
+  group,
+  onIgnore,
+  selected,
+  onSelect,
+}: {
+  group: DuplicateGroup;
+  onIgnore: (g: DuplicateGroup, ignored: boolean) => void;
+  selected: Set<number>;
+  onSelect: (mediaId: number) => void;
+}) {
   const { t } = useTranslation();
   return (
     <div className={`dup-group${group.ignored ? ' dimmed' : ''}`}>
@@ -103,6 +124,8 @@ function Group({ group, onIgnore }: { group: DuplicateGroup; onIgnore: (g: Dupli
           <li key={c.mediaId}>
             <RecordingLine
               copy={c}
+              selected={selected.has(c.mediaId)}
+              onSelect={onSelect}
               badges={c.short && <span className="badge warn">{t('duplicates.short')}</span>}
               extra={c.title !== group.title && <span className="muted">{c.title}</span>}
             />
