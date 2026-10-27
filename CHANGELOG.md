@@ -2,6 +2,12 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
+## [0.5.1-alpha] - 2026-10-27
+
+### Fixed
+- Delete script: when run without permission to delete some of the files (recordings usually belong to the Plex user), it now stops before asking, deletes nothing and tells you to run it with `sudo`, instead of asking about every write-protected file and failing half way. Files are removed with `rm -f`, so the single confirmation covers all of them.
+- Delete script: running it with `sh` (dash on Debian/Ubuntu) failed with `Syntax error: "(" unexpected`; it now switches to bash by itself.
+
 ## [0.5.0-alpha] - 2026-10-27
 
 ### Added
@@ -56,6 +62,7 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.5.1-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.1-alpha
 [0.5.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.0-alpha
 [0.4.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.4.0-alpha
 [0.3.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.3.0-alpha

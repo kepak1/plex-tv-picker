@@ -324,6 +324,7 @@
     "done": "Done. Scan the library in Plex and empty the trash.",
     "yes": "y",
     "summary_one": "{{count}} file, {{size}}",
-    "summary_other": "{{count}} files, {{size}}"
+    "summary_other": "{{count}} files, {{size}}",
+    "noPermission": "No permission to delete some of the files, nothing was deleted. Run the script with sudo:"
   }
 }
