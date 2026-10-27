@@ -11,11 +11,13 @@ import { Browse } from './pages/Browse';
 import { Wishlist } from './pages/Wishlist';
 import { Ignored } from './pages/Ignored';
 import { Settings } from './pages/Settings';
+import { Tools } from './pages/Tools';
+import { Duplicates } from './pages/Duplicates';
 import { Logo } from './components/Logo';
 
 function Shell() {
   const { t } = useTranslation();
-  const { me, config } = useApp();
+  const { me, config, tools } = useApp();
   const logout = async () => {
     await api('/api/auth/logout', { method: 'POST' });
     location.href = '/';
@@ -30,6 +32,10 @@ function Shell() {
           <NavLink to="/" end>{t('nav.browse')}</NavLink>
           <NavLink to="/wishlist">{t('nav.wishlist')}</NavLink>
           <NavLink to="/ignored">{t('nav.ignored')}</NavLink>
+          <NavLink to="/tools">
+            {t('nav.tools')}
+            {!!tools?.duplicates.count && <span className="nav-count">{tools.duplicates.count}</span>}
+          </NavLink>
           <NavLink to="/settings">{t('nav.settings')}</NavLink>
         </nav>
         <div className="user">
@@ -43,6 +49,8 @@ function Shell() {
           <Route path="/" element={<Browse />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/ignored" element={<Ignored />} />
+          <Route path="/tools" element={<Tools />} />
+          <Route path="/tools/duplicates" element={<Duplicates />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

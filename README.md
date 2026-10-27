@@ -23,6 +23,7 @@ Plex's *Live TV → Browse* shows the same titles you already skipped over and o
 - **Optional daily email** with everything new in the guide and/or your recommendations.
 - **Open in Plex**: every title and airing links straight to its Plex Web page with the *Record* button.
 - **Search Google** button for every title.
+- **Tools**: a separate tab for library helpers. The first one finds **duplicate recordings**: episodes and movies stored more than once (several versions of one item or separate items), with each copy's length, size, quality, date added and file path, a warning for copies that look cut short, and a link to Plex to remove the extras. Groups that aren't real duplicates can be marked as such.
 - **Sign in with Plex**: only users of your Plex server get in, and each user has their own hidden list, wishlist, email and language.
 - **Translations**: English and Polish; adding a language is one JSON file.
 
@@ -117,6 +118,7 @@ Stack: Node.js + Fastify + SQLite (`node:sqlite`) on the backend, React + Vite +
 - Guide items are matched to your library by Plex GUID; when that fails, by normalised title and year (movies), or by show title plus season/episode number or episode title.
 - Your recording rules and scheduled recordings are read live from Plex (cached for a minute), so *Hide scheduled* is always current.
 - Recommendations read the server's watch history (`/status/sessions/history/all`) for each signed-in user, then score every guide title: TMDB's recommendations for each watched title, plus a genre and country profile (rarer genres count more, recent viewing counts more). Titles you watched, have or hid are left out. They are recalculated after every refresh.
+- Duplicate recordings are found in the library data read during every refresh (or with *Refresh* on the tool page): episodes with the same show, season and episode number (or the same episode title, or air date, when there are no numbers), and movies with the same title and year. RecPick never deletes anything; copies are removed in Plex.
 - Links open `PLEX_PUBLIC_URL/web/index.html#!/server/<machineId>/provider/<EPG provider>/details?key=<item>`, the same page you get from Plex's own guide.
 
 ## Privacy
@@ -127,7 +129,7 @@ RecPick runs entirely on your server and has no telemetry. Besides your Plex ser
 
 - Tested with the Plex cloud guide (`tv.plex.providers.epg.cloud`). XMLTV guides are not supported yet.
 - The *Sports* section of the guide is skipped.
-- Recording is started in Plex itself; the app does not create recording rules.
+- RecPick only reads from Plex. Recording is started in Plex itself (the app does not create recording rules), and duplicate copies are removed in Plex too.
 
 ## Support
 

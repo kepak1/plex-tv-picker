@@ -289,7 +289,7 @@ export async function hasServerAccess(token: string, account: PlexUser): Promise
  * library items and shows "Play" instead of "Record". The provider is the key's first segment.
  */
 export function plexWebLink(machineId: string, epgKey: string): string {
-  const provider = epgKey.match(/^\/([^/]+)\//)?.[1];
+  const provider = epgKey.startsWith('/library/') ? undefined : epgKey.match(/^\/([^/]+)\//)?.[1];
   const route = provider ? `server/${machineId}/provider/${provider}` : `server/${machineId}`;
   return `${config.plexPublicUrl}/web/index.html#!/${route}/details?key=${encodeURIComponent(epgKey)}`;
 }

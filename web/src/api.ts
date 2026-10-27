@@ -156,3 +156,42 @@ export interface Rule {
   createdAt: number;
   matchCount: number;
 }
+
+export interface ToolsSummary {
+  duplicates: { count: number; scanning: boolean };
+}
+
+export interface DuplicateCopy {
+  ratingKey: string;
+  mediaId: number;
+  title: string;
+  duration: number | null;
+  size: number | null;
+  addedAt: number | null;
+  resolution: string | null;
+  videoCodec: string | null;
+  audioCodec: string | null;
+  container: string | null;
+  file: string | null;
+  parts: number;
+  short: boolean;
+}
+
+export interface DuplicateGroup {
+  key: string;
+  kind: 'episode' | 'movie';
+  show: string | null;
+  title: string;
+  season: number | null;
+  episode: number | null;
+  airDate: string | null;
+  year: number | null;
+  copies: DuplicateCopy[];
+  ignored: boolean;
+}
+
+export interface Duplicates {
+  scannedAt: number | null;
+  scanning: boolean;
+  groups: DuplicateGroup[];
+}

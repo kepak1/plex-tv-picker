@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, ApiError, type AppConfig, type Me, type Wish } from './api';
+import { api, ApiError, type AppConfig, type Me, type ToolsSummary, type Wish } from './api';
 
 interface AppState {
   config: AppConfig;
@@ -9,6 +9,9 @@ interface AppState {
   plexLink: (epgKey: string) => string;
   wishes: Wish[];
   reloadWishes: () => Promise<void>;
+  /** Counters for the Tools menu entry; null until loaded. */
+  tools: ToolsSummary | null;
+  reloadTools: () => Promise<void>;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -25,6 +28,7 @@ export function AppProvider({ children, login }: { children: ReactNode; login: (
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [wishes, setWishes] = useState<Wish[]>([]);
+  const [tools, setTools] = useState<ToolsSummary | null>(null);
 
   const reloadMe = useCallback(async () => {
     try {
@@ -38,6 +42,7 @@ export function AppProvider({ children, login }: { children: ReactNode; login: (
   }, [i18n]);
 
   const reloadWishes = useCallback(async () => setWishes(await api<Wish[]>('/api/wishlist')), []);
+  const reloadTools = useCallback(async () => setTools(await api<ToolsSummary>('/api/tools')), []);
 
   useEffect(() => {
     void api<AppConfig>('/api/config').then(setConfig);
@@ -45,18 +50,22 @@ export function AppProvider({ children, login }: { children: ReactNode; login: (
   }, [reloadMe]);
 
   useEffect(() => {
-    if (me) void reloadWishes();
-  }, [me, reloadWishes]);
+    if (me) {
+      void reloadWishes();
+      void reloadTools();
+    }
+  }, [me, reloadWishes, reloadTools]);
 
   useEffect(() => {
     document.documentElement.lang = i18n.resolvedLanguage ?? 'pl';
   }, [i18n.resolvedLanguage]);
 
-  // Same format as plexWebLink in server/plex.ts: guide items need the provider in the route.
+  // Same format as plexWebLink in server/plex.ts: guide items need the provider in the route,
+  // library items (/library/metadata/...) must not have one.
   const plexLink = useCallback(
     (epgKey: string) => {
       if (!config?.machineIdentifier) return `${config?.plexUrl}/web/index.html`;
-      const provider = epgKey.match(/^\/([^/]+)\//)?.[1];
+      const provider = epgKey.startsWith('/library/') ? undefined : epgKey.match(/^\/([^/]+)\//)?.[1];
       const route = provider ? `server/${config.machineIdentifier}/provider/${provider}` : `server/${config.machineIdentifier}`;
       return `${config.plexUrl}/web/index.html#!/${route}/details?key=${encodeURIComponent(epgKey)}`;
     },
@@ -64,8 +73,8 @@ export function AppProvider({ children, login }: { children: ReactNode; login: (
   );
 
   const value = useMemo(
-    () => (config && me ? { config, me, reloadMe, plexLink, wishes, reloadWishes } : null),
-    [config, me, reloadMe, plexLink, wishes, reloadWishes],
+    () => (config && me ? { config, me, reloadMe, plexLink, wishes, reloadWishes, tools, reloadTools } : null),
+    [config, me, reloadMe, plexLink, wishes, reloadWishes, tools, reloadTools],
   );
 
   if (!config || me === undefined) return <div className="splash" />;

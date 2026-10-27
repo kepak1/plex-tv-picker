@@ -2,6 +2,11 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
+## [0.3.0-alpha] - 2026-10-27
+
+### Added
+- *Tools* tab for library helpers, with a counter in the menu. The first tool, *Duplicate recordings*, lists episodes and movies stored in the library more than once (several versions of one item or separate items with the same season and episode number, episode title or air date; movies with the same title and year). Each copy shows its length, size, quality, date added and file path, with a link to Plex Web; copies much shorter than the longest one are flagged as probably cut short. A group can be marked "not a duplicate" for everyone until its copies change. The list is refreshed with every sync or on demand ([#6](https://github.com/kepak1/recpick/issues/6)).
+
 ## [0.2.0-alpha] - 2026-10-25
 
 ### Added
@@ -36,5 +41,6 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.3.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.3.0-alpha
 [0.2.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.2.0-alpha
 [0.1.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.1.0-alpha
