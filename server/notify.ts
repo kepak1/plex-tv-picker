@@ -26,6 +26,7 @@ export interface UserRow {
   alerts_enabled: number;
   digest_enabled: number;
   recs_enabled: number;
+  short_threshold: number;
   last_digest_at: number | null;
 }
 

@@ -19,7 +19,9 @@ import { recommendationsFor } from './recommend.js';
 import { addIgnore, clearIgnores, listIgnores, removeIgnore } from './ignores.js';
 import { cleanConditions, compileConditions, countMatches, deleteRule, listRules, saveRule } from './rules.js';
 import { matchesWords, normalize } from './text.js';
-import { duplicateCount, duplicateGroups, ignoreDuplicate, isScanning, rescanDuplicates, unignoreDuplicate } from './duplicates.js';
+import { duplicateCount, duplicateGroups, ignoreDuplicate, unignoreDuplicate } from './duplicates.js';
+import { ignoreShort, shortCount, shortRecordings, THRESHOLDS, unignoreShort, validThreshold } from './short.js';
+import { isScanning, rescanLibraryTools } from './tools.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
 await app.register(cookie);
@@ -123,6 +125,8 @@ await app.register(async (api) => {
       alertsEnabled: u.alerts_enabled === 1,
       digestEnabled: u.digest_enabled === 1,
       recsEnabled: u.recs_enabled === 1,
+      shortThreshold: validThreshold(u.short_threshold),
+      shortThresholds: THRESHOLDS,
     };
   });
 
@@ -133,16 +137,18 @@ await app.register(async (api) => {
       alertsEnabled?: boolean;
       digestEnabled?: boolean;
       recsEnabled?: boolean;
+      shortThreshold?: number;
     };
     const u = request.user!;
     db.prepare(
-      'UPDATE users SET language = ?, notify_email = ?, alerts_enabled = ?, digest_enabled = ?, recs_enabled = ?, last_digest_at = COALESCE(last_digest_at, ?) WHERE id = ?',
+      'UPDATE users SET language = ?, notify_email = ?, alerts_enabled = ?, digest_enabled = ?, recs_enabled = ?, short_threshold = ?, last_digest_at = COALESCE(last_digest_at, ?) WHERE id = ?',
     ).run(
       body.language !== undefined ? body.language && resolveLanguage(body.language) : u.language,
       body.notifyEmail !== undefined ? body.notifyEmail?.trim() || null : u.notify_email,
       body.alertsEnabled !== undefined ? Number(body.alertsEnabled) : u.alerts_enabled,
       body.digestEnabled !== undefined ? Number(body.digestEnabled) : u.digest_enabled,
       body.recsEnabled !== undefined ? Number(body.recsEnabled) : u.recs_enabled,
+      body.shortThreshold !== undefined ? validThreshold(body.shortThreshold) : u.short_threshold,
       now(),
       u.id,
     );
@@ -343,16 +349,21 @@ await app.register(async (api) => {
 
   // ---------- Tools ----------
 
-  api.get('/api/tools', async () => ({ duplicates: { count: duplicateCount(), scanning: isScanning() } }));
+  const threshold = (request: FastifyRequest) => validThreshold(request.user!.short_threshold);
 
-  const duplicates = () => ({ ...duplicateGroups(), scanning: isScanning() });
+  api.get('/api/tools', async (request) => ({
+    scanning: isScanning(),
+    duplicates: { count: duplicateCount() },
+    short: { count: shortCount(threshold(request)) },
+  }));
 
-  api.get('/api/tools/duplicates', async () => duplicates());
-
-  api.post('/api/tools/duplicates/scan', async () => {
-    await rescanDuplicates();
-    return duplicates();
+  // Refreshing runs in the background; pages poll while `scanning` is true.
+  api.post('/api/tools/scan', async () => {
+    void rescanLibraryTools();
+    return { scanning: true };
   });
+
+  api.get('/api/tools/duplicates', async () => ({ ...duplicateGroups(), scanning: isScanning() }));
 
   api.put('/api/tools/duplicates/ignored/:key', async (request, reply) => {
     if (!ignoreDuplicate((request.params as { key: string }).key, request.user!.id)) return reply.code(404).send({ error: 'not found' });
@@ -361,6 +372,22 @@ await app.register(async (api) => {
 
   api.delete('/api/tools/duplicates/ignored/:key', async (request) => {
     unignoreDuplicate((request.params as { key: string }).key);
+    return { ok: true };
+  });
+
+  api.get('/api/tools/short', async (request) => ({
+    ...shortRecordings(threshold(request)),
+    threshold: threshold(request),
+    scanning: isScanning(),
+  }));
+
+  api.put('/api/tools/short/ignored/:id', async (request, reply) => {
+    if (!ignoreShort(Number((request.params as { id: string }).id), request.user!.id)) return reply.code(404).send({ error: 'not found' });
+    return { ok: true };
+  });
+
+  api.delete('/api/tools/short/ignored/:id', async (request) => {
+    unignoreShort(Number((request.params as { id: string }).id));
     return { ok: true };
   });
 

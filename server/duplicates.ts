@@ -1,5 +1,5 @@
 import { db, getMeta, now, setMeta } from './db.js';
-import { librarySections, serverGetAll, type PlexMetadata } from './plex.js';
+import { copiesOf, showKey, type Library, type LibraryCopy, type LibraryMetadata } from './library.js';
 import { normalize } from './text.js';
 
 // Duplicate recordings in the Plex library: the same episode or movie stored more than once, either
@@ -20,45 +20,7 @@ CREATE TABLE IF NOT EXISTS duplicate_ignores (
 );
 `);
 
-interface LibraryPart {
-  file?: string;
-  size?: number;
-  duration?: number;
-}
-
-interface LibraryMedia {
-  id: number;
-  duration?: number;
-  videoResolution?: string;
-  videoCodec?: string;
-  audioCodec?: string;
-  container?: string;
-  Part?: LibraryPart[];
-}
-
-/** Library list entries carry more than guide entries; only the fields used here. */
-export type LibraryMetadata = Omit<PlexMetadata, 'Media'> & {
-  ratingKey: string;
-  addedAt?: number;
-  originallyAvailableAt?: string;
-  Media?: LibraryMedia[];
-};
-
-export interface DuplicateCopy {
-  ratingKey: string;
-  mediaId: number;
-  /** Title of the item the copy belongs to (it can differ between separate items). */
-  title: string;
-  /** Milliseconds. */
-  duration: number | null;
-  size: number | null;
-  addedAt: number | null;
-  resolution: string | null;
-  videoCodec: string | null;
-  audioCodec: string | null;
-  container: string | null;
-  file: string | null;
-  parts: number;
+export interface DuplicateCopy extends LibraryCopy {
   short: boolean;
 }
 
@@ -82,7 +44,6 @@ interface Scan {
 }
 
 let scan: Scan | null = null;
-let scanning: Promise<void> | null = null;
 
 function stored(): Scan | null {
   if (!scan) {
@@ -103,10 +64,6 @@ function ignoredSignatures(): Map<string, string> {
   return new Map(rows.map((r) => [r.group_key, r.signature]));
 }
 
-/** Show identity: Plex's own guid when the show is matched, its title otherwise. */
-const showKey = (m: LibraryMetadata) =>
-  m.grandparentGuid?.startsWith('plex://') ? m.grandparentGuid : `t:${normalize(m.grandparentTitle ?? '')}`;
-
 function episodeKey(m: LibraryMetadata): string | null {
   const show = showKey(m);
   if (m.index != null) return `e|${show}|${m.parentIndex ?? ''}|${m.index}`;
@@ -119,30 +76,8 @@ function episodeKey(m: LibraryMetadata): string | null {
 
 const movieKey = (m: LibraryMetadata) => `m|${normalize(m.title)}|${m.year ?? ''}`;
 
-function copiesOf(m: LibraryMetadata): DuplicateCopy[] {
-  return (m.Media ?? []).map((media) => {
-    const parts = media.Part ?? [];
-    const size = parts.reduce((sum, p) => sum + (p.size ?? 0), 0);
-    return {
-      ratingKey: m.ratingKey,
-      mediaId: media.id,
-      title: m.title,
-      duration: media.duration ?? (parts.reduce((sum, p) => sum + (p.duration ?? 0), 0) || null),
-      size: size || null,
-      addedAt: m.addedAt ?? null,
-      resolution: media.videoResolution ?? null,
-      videoCodec: media.videoCodec ?? null,
-      audioCodec: media.audioCodec ?? null,
-      container: media.container ?? null,
-      file: parts[0]?.file ?? null,
-      parts: parts.length,
-      short: false,
-    };
-  });
-}
-
 /** Groups library items by episode (or movie) and keeps the groups with more than one copy. */
-export function findDuplicates(movies: LibraryMetadata[], episodes: LibraryMetadata[]): Scan {
+export function findDuplicates({ movies, episodes }: Library): Scan {
   const groups = new Map<string, Omit<DuplicateGroup, 'ignored'>>();
   const add = (key: string, m: LibraryMetadata, kind: 'episode' | 'movie') => {
     let g = groups.get(key);
@@ -160,7 +95,7 @@ export function findDuplicates(movies: LibraryMetadata[], episodes: LibraryMetad
       };
       groups.set(key, g);
     }
-    g.copies.push(...copiesOf(m));
+    g.copies.push(...copiesOf(m).map((c) => ({ ...c, short: false })));
   };
   for (const m of episodes) {
     const key = episodeKey(m);
@@ -184,34 +119,11 @@ export function findDuplicates(movies: LibraryMetadata[], episodes: LibraryMetad
   return { scannedAt: now(), groups: out };
 }
 
-/** Stores a scan made from library data the sync has already fetched. */
-export function updateDuplicates(movies: LibraryMetadata[], episodes: LibraryMetadata[]): void {
-  scan = findDuplicates(movies, episodes);
+/** Scans library data the sync (or the tools' refresh) has fetched. */
+export function updateDuplicates(lib: Library): void {
+  scan = findDuplicates(lib);
   setMeta('duplicates', JSON.stringify(scan));
   console.log(`[duplicates] ${scan.groups.length} groups`);
-}
-
-/** Fetches the movie and TV libraries and scans them again (the "Refresh" button). */
-export function rescanDuplicates(): Promise<void> {
-  if (!scanning) {
-    scanning = (async () => {
-      const movies: LibraryMetadata[] = [];
-      const episodes: LibraryMetadata[] = [];
-      for (const section of await librarySections()) {
-        const base = `/library/sections/${section.key}/all`;
-        if (section.type === 'movie') movies.push(...((await serverGetAll(base)) as unknown as LibraryMetadata[]));
-        else if (section.type === 'show') episodes.push(...((await serverGetAll(`${base}?type=4`)) as unknown as LibraryMetadata[]));
-      }
-      updateDuplicates(movies, episodes);
-    })().finally(() => {
-      scanning = null;
-    });
-  }
-  return scanning;
-}
-
-export function isScanning(): boolean {
-  return scanning !== null;
 }
 
 /** Every group from the last scan, with ignored ones flagged. */

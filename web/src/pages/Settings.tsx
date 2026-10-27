@@ -11,11 +11,12 @@ export function Settings() {
   const [alertsEnabled, setAlertsEnabled] = useState(me.alertsEnabled);
   const [digestEnabled, setDigestEnabled] = useState(me.digestEnabled);
   const [recsEnabled, setRecsEnabled] = useState(me.recsEnabled);
+  const [shortThreshold, setShortThreshold] = useState(me.shortThreshold);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   const save = async () => {
     try {
-      await api('/api/settings', { method: 'PUT', json: { language, notifyEmail, alertsEnabled, digestEnabled, recsEnabled } });
+      await api('/api/settings', { method: 'PUT', json: { language, notifyEmail, alertsEnabled, digestEnabled, recsEnabled, shortThreshold } });
       await i18n.changeLanguage(language);
       await reloadMe();
       setMessage({ text: t('settings.saved', { lng: language }) });
@@ -73,6 +74,15 @@ export function Settings() {
             <b>{t('settings.recs')}</b>
             <span className="muted small">{t('settings.recsHint')}</span>
           </span>
+        </label>
+        <label className="field">
+          <span className="field-label">{t('settings.shortThreshold')}</span>
+          <select value={shortThreshold} onChange={(e) => setShortThreshold(Number(e.target.value))}>
+            {me.shortThresholds.map((v) => (
+              <option key={v} value={v}>{v}%</option>
+            ))}
+          </select>
+          <span className="muted small">{t('settings.shortThresholdHint')}</span>
         </label>
         {!config.mail && <p className="error">{t('settings.smtpMissing')}</p>}
         <div className="actions">

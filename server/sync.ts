@@ -5,7 +5,8 @@ import { fetchMissingDetails } from './tmdb.js';
 import { reloadCatalog } from './catalog.js';
 import { sendAlerts, sendDigests } from './notify.js';
 import { computeRecommendations } from './recommend.js';
-import { updateDuplicates, type LibraryMetadata } from './duplicates.js';
+import { episodeListPath, movieListPath, type LibraryMetadata } from './library.js';
+import { updateLibraryTools } from './tools.js';
 
 interface Section {
   key: string;
@@ -181,19 +182,18 @@ async function syncGuide(): Promise<void> {
 async function syncLibrary(): Promise<void> {
   const movies: { guid: string; norm: string; year: number | null }[] = [];
   const episodes: { guid: string; showGuid: string; showNorm: string; season: number | null; episode: number | null; norm: string }[] = [];
-  // The same lists, with versions and files, for the duplicate recordings tool.
+  // The same lists, with versions and files, for the library tools.
   const rawMovies: LibraryMetadata[] = [];
   const rawEpisodes: LibraryMetadata[] = [];
 
   for (const section of await librarySections()) {
-    const base = `/library/sections/${section.key}/all`;
     if (section.type === 'movie') {
-      for (const m of await serverGetAll(base)) {
+      for (const m of await serverGetAll(movieListPath(section.key))) {
         movies.push({ guid: m.guid, norm: normalize(m.title), year: m.year ?? null });
         rawMovies.push(m as unknown as LibraryMetadata);
       }
     } else if (section.type === 'show') {
-      for (const ep of await serverGetAll(`${base}?type=4`)) {
+      for (const ep of await serverGetAll(episodeListPath(section.key))) {
         episodes.push({
           guid: ep.guid,
           showGuid: ep.grandparentGuid ?? '',
@@ -215,5 +215,5 @@ async function syncLibrary(): Promise<void> {
     for (const e of episodes) ie.run(e.guid, e.showGuid, e.showNorm, e.season, e.episode, e.norm);
   });
   console.log(`[sync] library: ${movies.length} movies, ${episodes.length} episodes`);
-  updateDuplicates(rawMovies, rawEpisodes);
+  await updateLibraryTools({ movies: rawMovies, episodes: rawEpisodes });
 }
