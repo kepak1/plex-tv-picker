@@ -11,7 +11,8 @@
     "wishlist": "Lista życzeń",
     "ignored": "Pominięte",
     "settings": "Ustawienia",
-    "logout": "Wyloguj"
+    "logout": "Wyloguj",
+    "tools": "Narzędzia"
   },
   "login": {
     "title": "Zaloguj się kontem Plex",
@@ -262,5 +263,41 @@
     "XG": "NRD",
     "XI": "Irlandia Północna",
     "YU": "Jugosławia"
+  },
+  "tools": {
+    "title": "Narzędzia",
+    "text": "Pomocnicze narzędzia do biblioteki Plex. RecPick tylko je odczytuje, niczego w Plexie nie zmienia."
+  },
+  "duplicates": {
+    "title": "Duplikaty nagrań",
+    "tile": "Odcinki i filmy zapisane w bibliotece więcej niż raz.",
+    "text": "Odcinki i filmy, które są w bibliotece więcej niż raz: jako kilka wersji jednej pozycji albo jako osobne pozycje. Porównaj długość i usuń zbędne kopie w Plexie.",
+    "scannedAt": "Ostatnie sprawdzenie: {{date}}",
+    "notScanned": "Biblioteka nie była jeszcze sprawdzana.",
+    "rescan": "Odśwież",
+    "scanning": "Sprawdzam…",
+    "search": "Szukaj serialu, tytułu albo pliku…",
+    "summary_one": "{{count}} duplikat",
+    "summary_few": "{{count}} duplikaty",
+    "summary_many": "{{count}} duplikatów",
+    "summary_other": "{{count}} duplikatu",
+    "showIgnored": "Pokaż zignorowane ({{count}})",
+    "none": "Nie znaleziono duplikatów.",
+    "noMatches": "Nic nie pasuje do wyszukiwania.",
+    "movies": "Filmy",
+    "copies_one": "{{count}} kopia",
+    "copies_few": "{{count}} kopie",
+    "copies_many": "{{count}} kopii",
+    "copies_other": "{{count}} kopii",
+    "ignore": "To nie duplikat",
+    "ignoreHint": "Ukrywa grupę dla wszystkich, dopóki nie zmieni się zestaw kopii.",
+    "unignore": "Przywróć",
+    "openInPlex": "Otwórz w Plexie",
+    "short": "Prawdopodobnie ucięte",
+    "added": "dodano {{date}}",
+    "parts_one": "({{count}} część)",
+    "parts_few": "({{count}} części)",
+    "parts_many": "({{count}} części)",
+    "parts_other": "({{count}} części)"
   }
 }

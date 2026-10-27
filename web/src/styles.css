@@ -222,3 +222,26 @@ button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border
 .rule-editor .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
 .rule-editor .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .row-item.dimmed { opacity: 0.6; }
+
+/* Tools */
+.nav-count { display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.tool-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-top: 16px; }
+.tool-tile { display: grid; gap: 6px; padding: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); text-decoration: none; }
+.tool-tile:hover { border-color: var(--accent); }
+.tool-name { font-weight: 700; font-size: 16px; }
+.back { display: inline-block; margin-bottom: 8px; text-decoration: none; }
+.back:hover { color: var(--text); }
+.dup-section h2 { font-size: 18px; margin: 24px 0 8px; }
+.dup-group { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 8px; }
+.dup-group.dimmed { opacity: 0.55; }
+.dup-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.dup-head .grow { display: block; }
+.dup-copies { list-style: none; margin: 8px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.dup-copies li { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.dup-copies li:last-child { border-bottom: none; padding-bottom: 0; }
+.dup-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.dup-line .when { font-weight: 600; text-decoration: none; color: var(--accent-text); }
+.dup-line .when:hover { text-decoration: underline; }
+.dup-duration { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dup-file { margin-top: 3px; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.badge.warn { color: #f0b429; border-color: rgba(240, 180, 41, 0.45); }

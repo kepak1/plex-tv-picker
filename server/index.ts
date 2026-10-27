@@ -19,6 +19,7 @@ import { recommendationsFor } from './recommend.js';
 import { addIgnore, clearIgnores, listIgnores, removeIgnore } from './ignores.js';
 import { cleanConditions, compileConditions, countMatches, deleteRule, listRules, saveRule } from './rules.js';
 import { matchesWords, normalize } from './text.js';
+import { duplicateCount, duplicateGroups, ignoreDuplicate, isScanning, rescanDuplicates, unignoreDuplicate } from './duplicates.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
 await app.register(cookie);
@@ -338,6 +339,29 @@ await app.register(async (api) => {
     // Report matches already in the guide right away instead of waiting for the nightly refresh.
     sendAlerts(userId).catch((err) => console.error('[notify]', err));
     return { id: Number(res.lastInsertRowid) };
+  });
+
+  // ---------- Tools ----------
+
+  api.get('/api/tools', async () => ({ duplicates: { count: duplicateCount(), scanning: isScanning() } }));
+
+  const duplicates = () => ({ ...duplicateGroups(), scanning: isScanning() });
+
+  api.get('/api/tools/duplicates', async () => duplicates());
+
+  api.post('/api/tools/duplicates/scan', async () => {
+    await rescanDuplicates();
+    return duplicates();
+  });
+
+  api.put('/api/tools/duplicates/ignored/:key', async (request, reply) => {
+    if (!ignoreDuplicate((request.params as { key: string }).key, request.user!.id)) return reply.code(404).send({ error: 'not found' });
+    return { ok: true };
+  });
+
+  api.delete('/api/tools/duplicates/ignored/:key', async (request) => {
+    unignoreDuplicate((request.params as { key: string }).key);
+    return { ok: true };
   });
 
   api.delete('/api/wishlist/:id', async (request) => {

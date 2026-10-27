@@ -11,7 +11,8 @@
     "wishlist": "Wishlist",
     "ignored": "Hidden",
     "settings": "Settings",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "tools": "Tools"
   },
   "login": {
     "title": "Sign in with Plex",
@@ -244,5 +245,35 @@
     "XG": "East Germany",
     "XI": "Northern Ireland",
     "YU": "Yugoslavia"
+  },
+  "tools": {
+    "title": "Tools",
+    "text": "Helpers for your Plex library. RecPick only reads it and never changes anything in Plex."
+  },
+  "duplicates": {
+    "title": "Duplicate recordings",
+    "tile": "Episodes and movies stored in the library more than once.",
+    "text": "Episodes and movies that are in the library more than once: as several versions of one item or as separate items. Compare their length and remove the extra copies in Plex.",
+    "scannedAt": "Last checked: {{date}}",
+    "notScanned": "The library has not been checked yet.",
+    "rescan": "Refresh",
+    "scanning": "Checking…",
+    "search": "Search show, title or file…",
+    "summary_one": "{{count}} duplicate",
+    "summary_other": "{{count}} duplicates",
+    "showIgnored": "Show ignored ({{count}})",
+    "none": "No duplicates found.",
+    "noMatches": "Nothing matches the search.",
+    "movies": "Movies",
+    "copies_one": "{{count}} copy",
+    "copies_other": "{{count}} copies",
+    "ignore": "Not a duplicate",
+    "ignoreHint": "Hides the group for everyone until its set of copies changes.",
+    "unignore": "Restore",
+    "openInPlex": "Open in Plex",
+    "short": "Probably cut short",
+    "added": "added {{date}}",
+    "parts_one": "({{count}} part)",
+    "parts_other": "({{count}} parts)"
   }
 }

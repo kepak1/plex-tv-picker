@@ -16,6 +16,27 @@ export function formatDate(ts: number): string {
   return new Date(ts * 1000).toLocaleString(localeTag(), { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** Milliseconds as "1:04:54" (or "42:10" under an hour). */
+export function formatDuration(ms: number): string {
+  const total = Math.round(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+/** Bytes as "715 MB" or "2.1 GB" in the UI locale. */
+export function formatSize(bytes: number): string {
+  const gb = bytes / 1e9;
+  const value = gb >= 1 ? gb : bytes / 1e6;
+  return `${value.toLocaleString(localeTag(), { maximumFractionDigits: gb >= 1 ? 1 : 0 })} ${gb >= 1 ? 'GB' : 'MB'}`;
+}
+
+/** Plex video resolution ("1080", "sd", "4k") as shown in Plex. */
+export function formatResolution(r: string): string {
+  return /^\d+$/.test(r) ? `${r}p` : r.toUpperCase();
+}
+
 export function episodeLabel(a: { season: number | null; episode: number | null }): string {
   return [a.season != null ? i18n.t('item.season', { season: a.season }) : '', a.episode != null ? i18n.t('item.episode', { episode: a.episode }) : '']
     .join('')
