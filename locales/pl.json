@@ -168,7 +168,16 @@
     "remove": "Usuń",
     "nowInGuide": "Teraz w programie",
     "notInGuide": "Nie ma w programie",
-    "added": "Dodano do listy życzeń"
+    "added": "Dodano do listy życzeń",
+    "found": "Jest w programie",
+    "foundCount_one": "{{count}} pozycja z listy jest teraz w programie TV.",
+    "foundCount_few": "{{count}} pozycje z listy są teraz w programie TV.",
+    "foundCount_many": "{{count}} pozycji z listy jest teraz w programie TV.",
+    "foundCount_other": "{{count}} pozycji z listy jest teraz w programie TV.",
+    "moreMatches_one": "i jeszcze {{count}} tytuł",
+    "moreMatches_few": "i jeszcze {{count}} tytuły",
+    "moreMatches_many": "i jeszcze {{count}} tytułów",
+    "moreMatches_other": "i jeszcze {{count}} tytułu"
   },
   "settings": {
     "title": "Ustawienia",

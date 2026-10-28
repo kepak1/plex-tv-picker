@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type Suggestion } from '../api';
 import { useApp } from '../app';
-import { img } from '../format';
+import { channelName, episodeLabel, formatAiring, img } from '../format';
+
+const MATCHES_SHOWN = 5;
 
 export function Wishlist() {
   const { t } = useTranslation();
-  const { wishes, reloadWishes } = useApp();
+  const { wishes, reloadWishes, plexLink } = useApp();
   const [query, setQuery] = useState('');
   const [phraseType, setPhraseType] = useState<'' | 'movie' | 'show'>('');
   const [suggestions, setSuggestions] = useState<{ guide: Suggestion[]; plex: Suggestion[] }>({ guide: [], plex: [] });
@@ -30,6 +32,19 @@ export function Wishlist() {
       clearTimeout(id);
     };
   }, [query]);
+
+  // Wishes found in the guide first, soonest airing first; the rest stay newest first.
+  const sorted = useMemo(
+    () =>
+      [...wishes].sort((a, b) => {
+        const na = a.matches[0]?.next.beginsAt;
+        const nb = b.matches[0]?.next.beginsAt;
+        if (na != null && nb != null) return na - nb;
+        return na != null ? -1 : nb != null ? 1 : 0;
+      }),
+    [wishes],
+  );
+  const found = wishes.filter((w) => w.matchCount > 0).length;
 
   const add = async (body: object) => {
     await api('/api/wishlist', { method: 'POST', json: body });
@@ -94,26 +109,48 @@ export function Wishlist() {
       {wishes.length === 0 ? (
         <p className="empty">{t('wishlist.empty')}</p>
       ) : (
-        <ul className="rows">
-          {wishes.map((w) => (
-            <li key={w.id} className="row-item">
-              {w.thumb ? <img src={img(w.thumb, 100)} alt="" className="row-thumb" loading="lazy" /> : <span className="row-thumb empty">“”</span>}
-              <div className="grow">
-                <div>
-                  <b>{w.title}</b> {w.year && <span className="muted">({w.year})</span>}{' '}
-                  {w.kind === 'phrase' ? <span className="badge">{t('wishlist.phrase')}</span> : null}
-                  {w.type && <span className="badge type">{t(`item.${w.type}`)}</span>}
+        <>
+          {found > 0 && <p className="ok-text small">{t('wishlist.foundCount', { count: found })}</p>}
+          <ul className="rows">
+            {sorted.map((w) => (
+              <li key={w.id} className={`row-item${w.matchCount ? ' found' : ''}`}>
+                {w.thumb ? <img src={img(w.thumb, 100)} alt="" className="row-thumb" loading="lazy" /> : <span className="row-thumb empty">“”</span>}
+                <div className="grow">
+                  <div>
+                    <b>{w.title}</b> {w.year && <span className="muted">({w.year})</span>}{' '}
+                    {w.kind === 'phrase' ? <span className="badge">{t('wishlist.phrase')}</span> : null}
+                    {w.type && <span className="badge type">{t(`item.${w.type}`)}</span>}
+                    {w.matchCount > 0 && <span className="badge ok">{t('wishlist.found')}</span>}
+                  </div>
+                  {w.matchCount ? (
+                    <ul className="wish-matches">
+                      {w.matches.slice(0, MATCHES_SHOWN).map((m) => (
+                        <li key={m.guid}>
+                          <a className="when" href={plexLink(m.epgKey)} target="_blank" rel="noreferrer">
+                            {formatAiring(m.next.beginsAt)}
+                          </a>
+                          <span>
+                            {m.title}
+                            {m.year && <span className="muted"> ({m.year})</span>}
+                            {m.type === 'show' && episodeLabel(m.next) && <span className="muted"> · {episodeLabel(m.next)}</span>}
+                          </span>
+                          <span className="muted">{[m.next.channelVcn, channelName(m.next.channelTitle)].filter(Boolean).join(' ')}</span>
+                          <a className="small" href={plexLink(m.epgKey)} target="_blank" rel="noreferrer">
+                            {t('item.openInPlex')}
+                          </a>
+                        </li>
+                      ))}
+                      {w.matchCount > MATCHES_SHOWN && <li className="muted">{t('wishlist.moreMatches', { count: w.matchCount - MATCHES_SHOWN })}</li>}
+                    </ul>
+                  ) : (
+                    <div className="muted small">{t('wishlist.notInGuide')}</div>
+                  )}
                 </div>
-                <div className={w.matchCount ? 'ok-text small' : 'muted small'}>
-                  {w.matchCount
-                    ? `${t('wishlist.nowInGuide')}: ${w.matches.map((m) => m.title).slice(0, 5).join(', ')}${w.matchCount > 5 ? '…' : ''}`
-                    : t('wishlist.notInGuide')}
-                </div>
-              </div>
-              <button onClick={() => remove(w.id)}>{t('wishlist.remove')}</button>
-            </li>
-          ))}
-        </ul>
+                <button onClick={() => remove(w.id)}>{t('wishlist.remove')}</button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

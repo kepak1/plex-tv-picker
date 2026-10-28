@@ -119,7 +119,15 @@ export interface Wish {
   year: number | null;
   thumb: string | null;
   matchCount: number;
-  matches: { guid: string; title: string; year: number | null; type: string }[];
+  /** Guide titles that match and still air, soonest airing first. */
+  matches: {
+    guid: string;
+    title: string;
+    year: number | null;
+    type: string;
+    epgKey: string;
+    next: { beginsAt: number; channelTitle: string | null; channelVcn: string | null; season: number | null; episode: number | null };
+  }[];
 }
 
 export interface Suggestion {

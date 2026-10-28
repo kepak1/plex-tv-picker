@@ -2,6 +2,11 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
+## [0.7.1-alpha] - 2026-10-28
+
+### Changed
+- Wishlist: entries found in the TV guide come first (soonest airing first) and are marked *In the guide*. Each match shows its next airing (time, channel, episode for shows) with a link to Plex Web to record it. Only titles that still air count as found.
+
 ## [0.7.0-alpha] - 2026-10-28
 
 ### Added
@@ -80,6 +85,7 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.7.1-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.7.1-alpha
 [0.7.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.7.0-alpha
 [0.6.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.6.0-alpha
 [0.5.1-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.1-alpha
