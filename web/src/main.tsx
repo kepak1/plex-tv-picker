@@ -14,6 +14,7 @@ import { Settings } from './pages/Settings';
 import { Tools } from './pages/Tools';
 import { Duplicates } from './pages/Duplicates';
 import { ShortRecordings } from './pages/ShortRecordings';
+import { Series } from './pages/Series';
 import { Logo } from './components/Logo';
 
 function Shell() {
@@ -54,6 +55,7 @@ function Shell() {
           <Route path="/tools" element={<Tools />} />
           <Route path="/tools/duplicates" element={<Duplicates />} />
           <Route path="/tools/short" element={<ShortRecordings />} />
+          <Route path="/tools/series" element={<Series />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

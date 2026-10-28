@@ -400,5 +400,25 @@
     "fileTitle": "w pliku: „{{title}}”",
     "detectedPart": "wykryto cz. {{part}}",
     "tmdbHint": "Numer odcinka, który TMDB podaje dla tytułu z nazwy pliku. Kliknij, żeby zmienić numer na ten."
+  },
+  "series": {
+    "title": "Serie filmowe",
+    "tile": "Brakujące części serii, z których masz już filmy.",
+    "text": "Serie filmowe (kolekcje z TMDB), z których masz co najmniej jeden film, i ich brakujące części. Brakujące filmy możesz dodać do listy życzeń, a alert przyjdzie, gdy pojawią się w programie TV.",
+    "needsTmdb": "To narzędzie potrzebuje klucza TMDB (TMDB_API_KEY).",
+    "search": "Szukaj serii albo filmu…",
+    "summary_one": "{{count}} seria, niepełnych: {{incomplete}}",
+    "summary_few": "{{count}} serie, niepełnych: {{incomplete}}",
+    "summary_many": "{{count}} serii, niepełnych: {{incomplete}}",
+    "summary_other": "{{count}} serii, niepełnych: {{incomplete}}",
+    "onlyIncomplete": "Tylko z brakującymi",
+    "showHidden": "Pokaż ukryte ({{count}})",
+    "none": "Żaden film z biblioteki nie należy do serii w TMDB.",
+    "owned": "masz {{owned}} z {{total}}",
+    "addMissing": "Dodaj brakujące ({{count}})",
+    "notInterested": "Nie interesuje mnie",
+    "hideMovie": "Ukryj",
+    "upcoming": "premiera {{date}}",
+    "announced": "zapowiedź"
   }
 }

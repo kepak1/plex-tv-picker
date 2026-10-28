@@ -131,6 +131,8 @@ export function addColumn(table: string, column: string, definition: string): bo
 // Columns added after the first release.
 addColumn('users', 'recs_enabled', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'short_threshold', 'INTEGER NOT NULL DEFAULT 80');
+// Wishes added from film series carry the TMDB id, which matches guide titles more reliably than the title.
+addColumn('wishlist', 'tmdb_id', 'INTEGER');
 
 export function getMeta(key: string): string | undefined {
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;

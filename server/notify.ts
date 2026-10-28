@@ -36,6 +36,7 @@ export interface WishRow {
   kind: 'title' | 'phrase';
   type: 'movie' | 'show' | null;
   guid: string | null;
+  tmdb_id: number | null;
   title: string;
   title_norm: string;
   year: number | null;
@@ -45,6 +46,7 @@ export function wishMatches(wish: WishRow, item: Item): boolean {
   if (wish.type && wish.type !== item.type) return false;
   if (wish.kind === 'phrase') return matchesWords(item.titleNorm, wish.title_norm);
   if (wish.guid && wish.guid === item.guid) return true;
+  if (wish.tmdb_id && item.tmdbId === wish.tmdb_id) return true;
   if (wish.title_norm !== item.titleNorm) return false;
   // Guide years for shows are unreliable, so only movies are checked against the year.
   if (item.type === 'movie' && wish.year && item.year) return Math.abs(wish.year - item.year) <= 1;

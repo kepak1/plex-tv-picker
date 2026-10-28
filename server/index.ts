@@ -22,6 +22,7 @@ import { matchesWords, normalize } from './text.js';
 import { duplicateCount, duplicateGroups, ignoreDuplicate, unignoreDuplicate } from './duplicates.js';
 import { ignoreShort, shortCount, shortRecordings, THRESHOLDS, unignoreShort, validThreshold } from './short.js';
 import { isScanning, rescanLibraryTools } from './tools.js';
+import { seriesCount, seriesFor, setSeriesHidden } from './series.js';
 
 const app = Fastify({ logger: { level: 'warn' }, trustProxy: true });
 await app.register(cookie);
@@ -335,13 +336,25 @@ await app.register(async (api) => {
   });
 
   api.post('/api/wishlist', async (request, reply) => {
-    const body = request.body as { kind: 'title' | 'phrase'; type?: 'movie' | 'show' | null; guid?: string; title: string; year?: number; thumb?: string };
+    const body = request.body as {
+      kind: 'title' | 'phrase';
+      type?: 'movie' | 'show' | null;
+      guid?: string;
+      tmdbId?: number;
+      title: string;
+      year?: number;
+      thumb?: string;
+    };
     const title = body.title?.trim();
     if (!title || (body.kind !== 'title' && body.kind !== 'phrase')) return reply.code(400).send({ error: 'bad request' });
     const userId = request.user!.id;
     const res = db
-      .prepare('INSERT INTO wishlist (user_id, kind, type, guid, title, title_norm, year, thumb, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(userId, body.kind, body.type ?? null, body.kind === 'title' ? (body.guid ?? null) : null, title, normalize(title), body.year ?? null, body.thumb ?? null, now());
+      .prepare('INSERT INTO wishlist (user_id, kind, type, guid, tmdb_id, title, title_norm, year, thumb, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(
+        userId, body.kind, body.type ?? null, body.kind === 'title' ? (body.guid ?? null) : null,
+        body.kind === 'title' && Number.isInteger(body.tmdbId) ? body.tmdbId! : null,
+        title, normalize(title), body.year ?? null, body.thumb ?? null, now(),
+      );
     // Report matches already in the guide right away instead of waiting for the nightly refresh.
     sendAlerts(userId).catch((err) => console.error('[notify]', err));
     return { id: Number(res.lastInsertRowid) };
@@ -355,6 +368,8 @@ await app.register(async (api) => {
     scanning: isScanning(),
     duplicates: { count: duplicateCount() },
     short: { count: shortCount(threshold(request)) },
+    // Not part of the menu counter: missing parts aren't a problem to fix.
+    series: { count: seriesCount(request.user!.id) },
   }));
 
   // Refreshing runs in the background; pages poll while `scanning` is true.
@@ -372,6 +387,22 @@ await app.register(async (api) => {
 
   api.delete('/api/tools/duplicates/ignored/:key', async (request) => {
     unignoreDuplicate((request.params as { key: string }).key);
+    return { ok: true };
+  });
+
+  api.get('/api/tools/series', async (request) => ({ ...seriesFor(request.user!.id), scanning: isScanning() }));
+
+  api.put('/api/tools/series/hidden/:kind/:id', async (request, reply) => {
+    const { kind, id } = request.params as { kind: string; id: string };
+    if ((kind !== 'series' && kind !== 'movie') || !/^\d+$/.test(id)) return reply.code(400).send({ error: 'bad request' });
+    setSeriesHidden(request.user!.id, kind, Number(id), true);
+    return { ok: true };
+  });
+
+  api.delete('/api/tools/series/hidden/:kind/:id', async (request, reply) => {
+    const { kind, id } = request.params as { kind: string; id: string };
+    if ((kind !== 'series' && kind !== 'movie') || !/^\d+$/.test(id)) return reply.code(400).send({ error: 'bad request' });
+    setSeriesHidden(request.user!.id, kind, Number(id), false);
     return { ok: true };
   });
 
