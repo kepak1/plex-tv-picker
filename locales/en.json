@@ -154,7 +154,12 @@
     "remove": "Remove",
     "nowInGuide": "In the guide now",
     "notInGuide": "Not in the guide",
-    "added": "Added to wishlist"
+    "added": "Added to wishlist",
+    "found": "In the guide",
+    "foundCount_one": "{{count}} wish is in the TV guide now.",
+    "foundCount_other": "{{count}} wishes are in the TV guide now.",
+    "moreMatches_one": "and {{count}} more title",
+    "moreMatches_other": "and {{count}} more titles"
   },
   "settings": {
     "title": "Settings",

@@ -279,3 +279,11 @@ button.danger:hover:not(:disabled) { background: rgba(229, 83, 75, 0.12); border
 .series-parts .when { font-weight: 600; text-decoration: none; color: var(--accent-text); }
 .series-mark { width: 14px; text-align: center; }
 .series-parts li.owned .series-mark { color: var(--ok); }
+
+/* Wishlist matches */
+.row-item.found { border-color: rgba(76, 175, 122, 0.45); }
+.wish-matches { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.wish-matches li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
+.wish-matches .when { font-weight: 600; text-decoration: none; color: var(--accent-text); min-width: 110px; }
+.wish-matches .when:hover { text-decoration: underline; }
+.wish-matches a.small { color: var(--muted); }

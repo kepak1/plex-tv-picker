@@ -313,9 +313,33 @@ await app.register(async (api) => {
   api.get('/api/wishlist', async (request) => {
     const wishes = db.prepare('SELECT * FROM wishlist WHERE user_id = ? ORDER BY created_at DESC').all(request.user!.id) as unknown as (WishRow & Record<string, unknown>)[];
     const items = [...allItems()];
+    const ts = now();
     return wishes.map((w) => {
-      const matches = items.filter((i) => wishMatches(w, i));
-      return { ...w, matches: matches.slice(0, 20).map((i) => ({ guid: i.guid, title: i.title, year: i.year, type: i.type })), matchCount: matches.length };
+      // Only titles that still air count as found; the soonest airing comes first.
+      const matches = items
+        .filter((i) => wishMatches(w, i))
+        .map((i) => ({ item: i, next: i.airings.filter((a) => a.endsAt >= ts).sort((a, b) => a.beginsAt - b.beginsAt)[0] }))
+        .filter((m) => m.next)
+        .sort((a, b) => a.next!.beginsAt - b.next!.beginsAt);
+      return {
+        ...w,
+        matches: matches.slice(0, 20).map(({ item: i, next: a }) => ({
+          guid: i.guid,
+          title: i.title,
+          year: i.year,
+          type: i.type,
+          // Same as the guide cards: movies open their airing (with Record), shows the show page.
+          epgKey: i.type === 'movie' ? a!.epgKey : i.epgKey,
+          next: {
+            beginsAt: a!.beginsAt,
+            channelTitle: a!.channelTitle,
+            channelVcn: a!.channelVcn,
+            season: a!.season,
+            episode: a!.episode,
+          },
+        })),
+        matchCount: matches.length,
+      };
     });
   });
 
