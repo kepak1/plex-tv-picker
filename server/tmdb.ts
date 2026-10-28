@@ -283,14 +283,115 @@ async function runtimes<T>(
   return new Map(unique.map((w) => [key(w.id, w.season), stored.get(key(w.id, w.season))?.value ?? null]));
 }
 
+// Library movies' runtime and series, from one request per movie (short recordings, film series).
+db.exec(`
+CREATE TABLE IF NOT EXISTS tmdb_movies (
+  tmdb_id INTEGER PRIMARY KEY,
+  runtime INTEGER,               -- minutes
+  collection_id INTEGER,         -- the TMDB collection (film series) the movie belongs to
+  checked_at INTEGER NOT NULL
+);
+`);
+
+export interface MovieDetails {
+  runtime: number | null;
+  collection: number | null;
+}
+
+/** Runtime and series of each movie, looked up once and rechecked every 90 days. */
+export async function movieDetails(ids: number[]): Promise<Map<number, MovieDetails>> {
+  const stored = new Map<number, MovieDetails & { checkedAt: number }>();
+  for (const r of db.prepare('SELECT * FROM tmdb_movies').all() as Record<string, any>[]) {
+    stored.set(r.tmdb_id, { runtime: r.runtime, collection: r.collection_id, checkedAt: r.checked_at });
+  }
+  const unique = [...new Set(ids)];
+  if (tmdbEnabled()) {
+    const stale = unique.filter((id) => (stored.get(id)?.checkedAt ?? 0) < now() - RECHECK_AFTER);
+    const save = db.prepare(
+      `INSERT INTO tmdb_movies (tmdb_id, runtime, collection_id, checked_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT(tmdb_id) DO UPDATE SET runtime = excluded.runtime, collection_id = excluded.collection_id, checked_at = excluded.checked_at`,
+    );
+    await pool('movie details', stale, async (id) => {
+      const d = await call<{ runtime?: number; belongs_to_collection?: { id: number } | null }>(`/movie/${id}`, {});
+      const value = { runtime: d?.runtime || null, collection: d?.belongs_to_collection?.id ?? null };
+      save.run(id, value.runtime, value.collection, now());
+      stored.set(id, { ...value, checkedAt: now() });
+      return d != null;
+    });
+  }
+  return new Map(unique.filter((id) => stored.has(id)).map((id) => [id, stored.get(id)!]));
+}
+
 /** TMDB runtime in minutes by movie id; movies without one are missing. */
 export async function movieRuntimes(ids: number[]): Promise<Map<number, number>> {
-  const found = await runtimes('movie', ids.map((id) => ({ id, season: -1 })), async (id) => {
-    const d = await call<{ runtime?: number }>(`/movie/${id}`, {});
-    return d?.runtime || null;
-  });
   const out = new Map<number, number>();
-  for (const [k, minutes] of found) if (minutes) out.set(Number(k.split('|')[0]), minutes);
+  for (const [id, d] of await movieDetails(ids)) if (d.runtime) out.set(id, d.runtime);
+  return out;
+}
+
+// Film series. New parts get announced, so these are rechecked more often than titles.
+const COLLECTION_RECHECK = 30 * 24 * 3600;
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS tmdb_collections (
+  id INTEGER PRIMARY KEY,
+  data TEXT NOT NULL,            -- Collection as JSON
+  checked_at INTEGER NOT NULL
+);
+`);
+
+export interface CollectionPart {
+  id: number;
+  title: string;
+  /** YYYY-MM-DD; null when not announced yet. */
+  releaseDate: string | null;
+  poster: string | null;
+}
+
+export interface Collection {
+  id: number;
+  name: string;
+  poster: string | null;
+  parts: CollectionPart[];
+}
+
+const posterUrl = (path: string | null | undefined) => (path ? `https://image.tmdb.org/t/p/w185${path}` : null);
+
+/** Each collection with its parts (Polish titles), looked up once and rechecked every 30 days. */
+export async function collections(ids: number[]): Promise<Map<number, Collection>> {
+  const stored = new Map<number, { value: Collection | null; checkedAt: number }>();
+  for (const r of db.prepare('SELECT * FROM tmdb_collections').all() as Record<string, any>[]) {
+    stored.set(r.id, { value: JSON.parse(r.data), checkedAt: r.checked_at });
+  }
+  const unique = [...new Set(ids)];
+  if (tmdbEnabled()) {
+    const stale = unique.filter((id) => (stored.get(id)?.checkedAt ?? 0) < now() - COLLECTION_RECHECK);
+    const save = db.prepare(
+      `INSERT INTO tmdb_collections (id, data, checked_at) VALUES (?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET data = excluded.data, checked_at = excluded.checked_at`,
+    );
+    await pool('film series', stale, async (id) => {
+      const d = await call<{
+        name: string;
+        poster_path?: string | null;
+        parts?: { id: number; title: string; release_date?: string; poster_path?: string | null }[];
+      }>(`/collection/${id}`, { language: 'pl-PL' });
+      const value: Collection | null = d && {
+        id,
+        name: d.name,
+        poster: posterUrl(d.poster_path),
+        parts: (d.parts ?? []).map((p) => ({ id: p.id, title: p.title, releaseDate: p.release_date || null, poster: posterUrl(p.poster_path) })),
+      };
+      save.run(id, JSON.stringify(value), now());
+      stored.set(id, { value, checkedAt: now() });
+      return value != null;
+    });
+  }
+  const out = new Map<number, Collection>();
+  for (const id of unique) {
+    const value = stored.get(id)?.value;
+    if (value) out.set(id, value);
+  }
   return out;
 }
 

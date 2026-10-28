@@ -114,6 +114,7 @@ export interface Wish {
   kind: 'title' | 'phrase';
   type: 'movie' | 'show' | null;
   guid: string | null;
+  tmdb_id?: number | null;
   title: string;
   year: number | null;
   thumb: string | null;
@@ -163,6 +164,7 @@ export interface ToolsSummary {
   scanning: boolean;
   duplicates: { count: number };
   short: { count: number };
+  series: { count: number };
 }
 
 export interface LibraryCopy {
@@ -232,4 +234,27 @@ export interface ShortRecordings {
   threshold: number;
   moviesUnchecked: number;
   recordings: ShortRecording[];
+}
+
+export interface SeriesPart {
+  tmdbId: number;
+  title: string;
+  releaseDate: string | null;
+  poster: string | null;
+  ratingKey: string | null;
+  hidden: boolean;
+}
+
+export interface FilmSeries {
+  id: number;
+  name: string;
+  poster: string | null;
+  parts: SeriesPart[];
+  hidden: boolean;
+}
+
+export interface SeriesData {
+  scannedAt: number | null;
+  scanning: boolean;
+  series: FilmSeries[];
 }

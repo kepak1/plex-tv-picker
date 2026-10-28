@@ -360,5 +360,23 @@
     "fileTitle": "file: \"{{title}}\"",
     "detectedPart": "part {{part}} detected",
     "tmdbHint": "The episode number TMDB gives for the title in the file name. Click to renumber the file to it."
+  },
+  "series": {
+    "title": "Film series",
+    "tile": "Missing parts of series you already have movies from.",
+    "text": "Film series (TMDB collections) you have at least one movie from, and their missing parts. Add missing movies to your wishlist to get an alert when they show up in the TV guide.",
+    "needsTmdb": "This tool needs a TMDB key (TMDB_API_KEY).",
+    "search": "Search series or movie…",
+    "summary_one": "{{count}} series, {{incomplete}} incomplete",
+    "summary_other": "{{count}} series, {{incomplete}} incomplete",
+    "onlyIncomplete": "Only with missing parts",
+    "showHidden": "Show hidden ({{count}})",
+    "none": "No movie in the library belongs to a series on TMDB.",
+    "owned": "{{owned}} of {{total}} owned",
+    "addMissing": "Add missing ({{count}})",
+    "notInterested": "Not interested",
+    "hideMovie": "Hide",
+    "upcoming": "out {{date}}",
+    "announced": "announced"
   }
 }

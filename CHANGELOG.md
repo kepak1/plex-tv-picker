@@ -2,6 +2,15 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
+## [0.7.0-alpha] - 2026-10-28
+
+### Added
+- *Film series* tool in *Tools* (with a TMDB key): every series (TMDB collection) you own at least one movie from, most complete first, with owned, missing and upcoming parts. Missing movies go on the wishlist one by one or with *Add missing (N)*, including unreleased ones (the alert comes when they reach the guide). Series and single movies can be hidden per user. The tile shows how many series are incomplete; this isn't added to the menu counter ([#15](https://github.com/kepak1/recpick/issues/15)).
+
+### Changed
+- Wishlist entries can carry a TMDB id and then also match guide titles by it.
+- A library movie's runtime and series come from one TMDB request, stored in a new table. After the upgrade every library movie is looked up once more (one request per movie).
+
 ## [0.6.0-alpha] - 2026-10-27
 
 ### Added
@@ -71,6 +80,7 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.7.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.7.0-alpha
 [0.6.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.6.0-alpha
 [0.5.1-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.1-alpha
 [0.5.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.5.0-alpha

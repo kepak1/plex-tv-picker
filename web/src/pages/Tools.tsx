@@ -6,7 +6,7 @@ import { useApp } from '../app';
 /** Tool tiles; each tool has its own page under /tools. */
 export function Tools() {
   const { t } = useTranslation();
-  const { tools, reloadTools } = useApp();
+  const { config, tools, reloadTools } = useApp();
 
   useEffect(() => {
     void reloadTools();
@@ -14,6 +14,7 @@ export function Tools() {
 
   const duplicates = tools?.duplicates.count ?? 0;
   const short = tools?.short.count ?? 0;
+  const series = tools?.series.count ?? 0;
 
   return (
     <div className="page narrow">
@@ -34,6 +35,15 @@ export function Tools() {
           </span>
           <span className="muted small">{t('short.tile')}</span>
         </Link>
+        {config.tmdb && (
+          <Link to="/tools/series" className="tool-tile">
+            <span className="tool-name">
+              {t('series.title')}
+              {series > 0 && <span className="nav-count muted-count">{series}</span>}
+            </span>
+            <span className="muted small">{t('series.tile')}</span>
+          </Link>
+        )}
       </div>
     </div>
   );

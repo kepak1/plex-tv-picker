@@ -1,6 +1,7 @@
 import { updateDuplicates } from './duplicates.js';
 import { fetchLibrary, type Library } from './library.js';
 import { updateShortRecordings } from './short.js';
+import { updateSeries } from './series.js';
 
 // Library tools share one read of the library: the sync passes the lists it fetched anyway,
 // and the tools' Refresh button fetches them again.
@@ -14,6 +15,11 @@ export async function updateLibraryTools(lib: Library): Promise<void> {
     await updateShortRecordings(lib);
   } catch (err) {
     console.error('[short] failed', err);
+  }
+  try {
+    await updateSeries(lib);
+  } catch (err) {
+    console.error('[series] failed', err);
   }
 }
 
