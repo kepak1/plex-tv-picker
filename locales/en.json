@@ -159,7 +159,13 @@
     "foundCount_one": "{{count}} wish is in the TV guide now.",
     "foundCount_other": "{{count}} wishes are in the TV guide now.",
     "moreMatches_one": "and {{count}} more title",
-    "moreMatches_other": "and {{count}} more titles"
+    "moreMatches_other": "and {{count}} more titles",
+    "recorded": "Recorded",
+    "recordedText": "The recording is in your library. It leaves this list on {{date}}.",
+    "recordedCount_one": "{{count}} movie from the list was recorded.",
+    "recordedCount_other": "{{count}} movies from the list were recorded.",
+    "willRecord": "Will be recorded",
+    "recordingAt": "Recording: {{when}}"
   },
   "settings": {
     "title": "Settings",

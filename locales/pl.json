@@ -177,7 +177,15 @@
     "moreMatches_one": "i jeszcze {{count}} tytuł",
     "moreMatches_few": "i jeszcze {{count}} tytuły",
     "moreMatches_many": "i jeszcze {{count}} tytułów",
-    "moreMatches_other": "i jeszcze {{count}} tytułu"
+    "moreMatches_other": "i jeszcze {{count}} tytułu",
+    "recorded": "Nagrane",
+    "recordedText": "Nagrany film jest w bibliotece. Zniknie z listy {{date}}.",
+    "recordedCount_one": "{{count}} film z listy został nagrany.",
+    "recordedCount_few": "{{count}} filmy z listy zostały nagrane.",
+    "recordedCount_many": "{{count}} filmów z listy zostało nagranych.",
+    "recordedCount_other": "{{count}} filmu z listy zostało nagrane.",
+    "willRecord": "Będzie nagrane",
+    "recordingAt": "Nagrywanie: {{when}}"
   },
   "settings": {
     "title": "Ustawienia",

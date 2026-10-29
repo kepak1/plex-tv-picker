@@ -133,6 +133,15 @@ addColumn('users', 'recs_enabled', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'short_threshold', 'INTEGER NOT NULL DEFAULT 80');
 // Wishes added from film series carry the TMDB id, which matches guide titles more reliably than the title.
 addColumn('wishlist', 'tmdb_id', 'INTEGER');
+// Recorded movie wishes: a library copy newer than the library was when the wish was added
+// (media_baseline, the highest movie media id then; NULL until the next library sync).
+addColumn('wishlist', 'media_baseline', 'INTEGER');
+addColumn('wishlist', 'recorded_at', 'INTEGER');
+addColumn('wishlist', 'recorded_key', 'TEXT');
+addColumn('library_movies', 'rating_key', 'TEXT');
+addColumn('library_movies', 'tmdb_id', 'INTEGER');
+/** Newest copy (Plex media ids only grow). */
+addColumn('library_movies', 'media_id', 'INTEGER');
 
 export function getMeta(key: string): string | undefined {
   const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;

@@ -71,7 +71,8 @@ export async function sendAlerts(onlyUserId?: number): Promise<void> {
   for (const user of users) {
     const to = recipient(user);
     if (!to) continue;
-    const wishes = db.prepare('SELECT * FROM wishlist WHERE user_id = ?').all(user.id) as unknown as WishRow[];
+    // Recorded movies are done; they only stay on the list for a few days.
+    const wishes = db.prepare('SELECT * FROM wishlist WHERE user_id = ? AND recorded_at IS NULL').all(user.id) as unknown as WishRow[];
     if (wishes.length === 0) continue;
     const ign = userIgnores(user.id);
     const found: { item: Item; airings: AiringView[]; keys: string[] }[] = [];
