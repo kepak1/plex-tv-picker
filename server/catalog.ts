@@ -1,7 +1,7 @@
 import { db, getMeta, now } from './db.js';
 import { matchesWords, normalize } from './text.js';
 import { recordingState, type RecordingState } from './plex.js';
-import { userIgnores, type UserIgnores } from './ignores.js';
+import { titleIgnored, userIgnores, type UserIgnores } from './ignores.js';
 import { airingRule, channelRules, titleRule } from './rules.js';
 
 export { userIgnores, type UserIgnores };
@@ -281,7 +281,7 @@ export function visibleAirings(
 
 /** Hidden by hand or by a rule that covers the whole title (channel rules hide single airings). */
 export function isHidden(item: Item, ign: UserIgnores): boolean {
-  return ign.titles.has(item.guid) || titleRule(item, ign.rules) !== undefined;
+  return titleIgnored(item, ign) || titleRule(item, ign.rules) !== undefined;
 }
 
 export function toView(item: Item, airings: AiringView[], ign: UserIgnores, rec: RecordingState): ItemView {
@@ -289,7 +289,7 @@ export function toView(item: Item, airings: AiringView[], ign: UserIgnores, rec:
   return {
     ...rest,
     subscribed: rec.subscribed.has(item.guid),
-    ignored: ign.titles.has(item.guid),
+    ignored: titleIgnored(item, ign),
     hiddenBy: titleRule(item, ign.rules)?.name ?? null,
     isNew: item.firstSeenAt > firstSyncAt && item.firstSeenAt > now() - 2 * 86400,
     airings,
