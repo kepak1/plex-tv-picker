@@ -1,6 +1,7 @@
 import { addColumn, db, now, transaction } from './db.js';
 import { normalize } from './text.js';
 import { activeRules, type CompiledRule } from './rules.js';
+import type { Item } from './catalog.js';
 
 // Hidden lists are expected to grow into the thousands, so they are indexed, paged and searched
 // in SQL, and the per-user lookup sets used by every catalog request are cached in memory.
@@ -10,6 +11,21 @@ if (addColumn('ignores', 'title_norm', "TEXT NOT NULL DEFAULT ''")) {
   const update = db.prepare('UPDATE ignores SET title_norm = ? WHERE id = ?');
   transaction(() => rows.forEach((r) => update.run(normalize(r.title), r.id)));
 }
+// The guide sometimes gives a title a new guid (e.g. a show re-matched in Plex), so hidden titles
+// also match by TMDB id and by type + normalised title (+ year for movies; show years in the guide
+// are often the episode's year).
+const addedType = addColumn('ignores', 'item_type', 'TEXT');
+addColumn('ignores', 'item_year', 'INTEGER');
+addColumn('ignores', 'tmdb_id', 'INTEGER');
+if (addedType) {
+  db.exec(`
+    UPDATE ignores SET (item_type, item_year, tmdb_id) =
+      (SELECT type, year, tmdb_id FROM items WHERE items.guid = ignores.item_guid)
+    WHERE item_guid IN (SELECT guid FROM items);
+    UPDATE ignores SET item_type = 'show' WHERE item_type IS NULL AND item_guid LIKE 'plex://show/%';
+    UPDATE ignores SET item_type = 'movie' WHERE item_type IS NULL AND item_guid LIKE 'plex://movie/%';
+  `);
+}
 db.exec(`
 CREATE INDEX IF NOT EXISTS ignores_user_created ON ignores(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS ignores_user_title ON ignores(user_id, title_norm);
@@ -18,10 +34,27 @@ CREATE INDEX IF NOT EXISTS ignores_user_title ON ignores(user_id, title_norm);
 export type IgnoreScope = 'title' | 'episode';
 
 export interface UserIgnores {
+  /** Hidden titles: guids, `tmdb:<type>:<id>` and `title:<type>:<norm>[:<year>]` keys. */
   titles: Set<string>;
   episodes: Set<string>;
   /** Enabled auto-hide rules. */
   rules: CompiledRule[];
+}
+
+function titleKeys(t: { type: string | null; titleNorm: string; year: number | null; tmdbId: number | null }): string[] {
+  const keys: string[] = [];
+  if (!t.type) return keys;
+  if (t.tmdbId != null) keys.push(`tmdb:${t.type}:${t.tmdbId}`);
+  if (t.type === 'show') keys.push(`title:show:${t.titleNorm}`);
+  else if (t.year != null) keys.push(`title:movie:${t.titleNorm}:${t.year}`);
+  return keys;
+}
+
+const itemKeys = (item: Item) => [item.guid, ...titleKeys(item)];
+
+/** Whether the user hid this title by hand, under its current guid or an earlier one. */
+export function titleIgnored(item: Item, ign: UserIgnores): boolean {
+  return itemKeys(item).some((k) => ign.titles.has(k));
 }
 
 const cache = new Map<number, Omit<UserIgnores, 'rules'>>();
@@ -30,15 +63,23 @@ const cache = new Map<number, Omit<UserIgnores, 'rules'>>();
 export function userIgnores(userId: number): UserIgnores {
   let sets = cache.get(userId);
   if (!sets) {
-    const rows = db.prepare('SELECT scope, item_guid, episode_guid FROM ignores WHERE user_id = ?').all(userId) as {
+    const rows = db
+      .prepare('SELECT scope, item_guid, episode_guid, title_norm, item_type, item_year, tmdb_id FROM ignores WHERE user_id = ?')
+      .all(userId) as {
       scope: IgnoreScope;
       item_guid: string;
       episode_guid: string;
+      title_norm: string;
+      item_type: string | null;
+      item_year: number | null;
+      tmdb_id: number | null;
     }[];
     sets = { titles: new Set(), episodes: new Set() };
     for (const r of rows) {
-      if (r.scope === 'title') sets.titles.add(r.item_guid);
-      else sets.episodes.add(r.episode_guid);
+      if (r.scope === 'title') {
+        sets.titles.add(r.item_guid);
+        for (const k of titleKeys({ type: r.item_type, titleNorm: r.title_norm, year: r.item_year, tmdbId: r.tmdb_id })) sets.titles.add(k);
+      } else sets.episodes.add(r.episode_guid);
     }
     cache.set(userId, sets);
   }
@@ -47,22 +88,40 @@ export function userIgnores(userId: number): UserIgnores {
 
 export function addIgnore(
   userId: number,
-  entry: { scope: IgnoreScope; itemGuid: string; episodeGuid?: string; title: string; episodeLabel: string | null; thumb: string | null },
+  entry: { scope: IgnoreScope; item: Item; episodeGuid?: string; episodeLabel: string | null },
 ): void {
+  const { item } = entry;
   db.prepare(
-    `INSERT OR IGNORE INTO ignores (user_id, scope, item_guid, episode_guid, title, title_norm, episode_label, thumb, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO ignores
+       (user_id, scope, item_guid, episode_guid, title, title_norm, episode_label, thumb, item_type, item_year, tmdb_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
-    userId, entry.scope, entry.itemGuid, entry.scope === 'episode' ? (entry.episodeGuid ?? '') : '', entry.title,
-    normalize(entry.title), entry.episodeLabel, entry.thumb, now(),
+    userId, entry.scope, item.guid, entry.scope === 'episode' ? (entry.episodeGuid ?? '') : '', item.title,
+    normalize(item.title), entry.episodeLabel, item.thumb, item.type, item.year, item.tmdbId, now(),
   );
   cache.delete(userId);
 }
 
-export function removeIgnore(userId: number, by: { id?: number; itemGuid?: string; episodeGuid?: string }): void {
+/** Removes one entry by id, an episode, or a title (with entries matching it under an earlier guid). */
+export function removeIgnore(userId: number, by: { id?: number; itemGuid?: string; episodeGuid?: string; item?: Item }): void {
   if (by.id) db.prepare('DELETE FROM ignores WHERE id = ? AND user_id = ?').run(by.id, userId);
   else if (by.episodeGuid) db.prepare("DELETE FROM ignores WHERE user_id = ? AND scope = 'episode' AND episode_guid = ?").run(userId, by.episodeGuid);
-  else if (by.itemGuid) db.prepare("DELETE FROM ignores WHERE user_id = ? AND scope = 'title' AND item_guid = ?").run(userId, by.itemGuid);
+  else if (by.itemGuid) {
+    db.prepare("DELETE FROM ignores WHERE user_id = ? AND scope = 'title' AND item_guid = ?").run(userId, by.itemGuid);
+    const item = by.item;
+    if (item) {
+      if (item.tmdbId != null) {
+        db.prepare("DELETE FROM ignores WHERE user_id = ? AND scope = 'title' AND item_type = ? AND tmdb_id = ?").run(userId, item.type, item.tmdbId);
+      }
+      if (item.type === 'show') {
+        db.prepare("DELETE FROM ignores WHERE user_id = ? AND scope = 'title' AND item_type = 'show' AND title_norm = ?").run(userId, item.titleNorm);
+      } else if (item.year != null) {
+        db.prepare("DELETE FROM ignores WHERE user_id = ? AND scope = 'title' AND item_type = 'movie' AND title_norm = ? AND item_year = ?").run(
+          userId, item.titleNorm, item.year,
+        );
+      }
+    }
+  }
   cache.delete(userId);
 }
 

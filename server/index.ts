@@ -246,20 +246,18 @@ await app.register(async (api) => {
       const se = `${a.season != null ? `S${a.season}` : ''}${a.episode != null ? `E${a.episode}` : ''}`;
       label = [se, a.episodeTitle !== item.title ? a.episodeTitle : null].filter(Boolean).join(' ') || null;
     }
-    addIgnore(request.user!.id, {
-      scope: body.scope,
-      itemGuid: item.guid,
-      episodeGuid: body.episodeGuid,
-      title: item.title,
-      episodeLabel: label,
-      thumb: item.thumb,
-    });
+    addIgnore(request.user!.id, { scope: body.scope, item, episodeGuid: body.episodeGuid, episodeLabel: label });
     return { ok: true };
   });
 
   api.delete('/api/ignores', async (request) => {
     const q = request.query as { id?: string; itemGuid?: string; episodeGuid?: string };
-    removeIgnore(request.user!.id, { id: num(q.id), itemGuid: q.itemGuid, episodeGuid: q.episodeGuid });
+    removeIgnore(request.user!.id, {
+      id: num(q.id),
+      itemGuid: q.itemGuid,
+      episodeGuid: q.episodeGuid,
+      item: q.itemGuid ? getItem(q.itemGuid) : undefined,
+    });
     return { ok: true };
   });
 
