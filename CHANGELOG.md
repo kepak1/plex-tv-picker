@@ -2,6 +2,12 @@
 
 All notable changes to RecPick are listed here. Versions follow [Semantic Versioning](https://semver.org/); `0.x` and `-alpha` releases may still change behaviour between versions.
 
+## [0.8.0-alpha] - 2026-10-29
+
+### Added
+- Wishlist: recording status. A match whose airing Plex will record shows *Scheduled* (or the time of the airing that will be recorded), a title with a recording rule shows *Recording set*, and the wish is marked *Will be recorded* ([#19](https://github.com/kepak1/recpick/issues/19)).
+- Wishlist: a movie that gets recorded after it was added to the wishlist is marked *Recorded*, with a link to the movie in Plex, and leaves the list after 3 days. A copy that counts as too short (*Short recordings*, your threshold) doesn't count. Movies already in the library when the wish was added (e.g. from *Short recordings*) stay until a new copy arrives. Show and phrase wishes are never removed. Recorded movies no longer trigger email alerts ([#19](https://github.com/kepak1/recpick/issues/19)).
+
 ## [0.7.2-alpha] - 2026-10-29
 
 ### Fixed
@@ -90,6 +96,7 @@ First public alpha. Tested on a single setup (Plex cloud guide, Poland).
 - The guide list refills itself when hiding titles empties the loaded page.
 - The title count no longer stays too high after hiding the last episode of a show.
 
+[0.8.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.8.0-alpha
 [0.7.2-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.7.2-alpha
 [0.7.1-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.7.1-alpha
 [0.7.0-alpha]: https://github.com/kepak1/recpick/releases/tag/v0.7.0-alpha

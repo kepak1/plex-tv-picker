@@ -5,8 +5,9 @@ import { fetchMissingDetails } from './tmdb.js';
 import { reloadCatalog } from './catalog.js';
 import { sendAlerts, sendDigests } from './notify.js';
 import { computeRecommendations } from './recommend.js';
-import { episodeListPath, movieListPath, type LibraryMetadata } from './library.js';
+import { episodeListPath, movieListPath, tmdbIdOf, type LibraryMetadata } from './library.js';
 import { updateLibraryTools } from './tools.js';
+import { updateRecordedWishes } from './wishlist.js';
 
 interface Section {
   key: string;
@@ -180,7 +181,7 @@ async function syncGuide(): Promise<void> {
 }
 
 async function syncLibrary(): Promise<void> {
-  const movies: { guid: string; norm: string; year: number | null }[] = [];
+  const movies: { guid: string; norm: string; year: number | null; ratingKey: string; tmdbId: number | null; mediaId: number | null }[] = [];
   const episodes: { guid: string; showGuid: string; showNorm: string; season: number | null; episode: number | null; norm: string }[] = [];
   // The same lists, with versions and files, for the library tools.
   const rawMovies: LibraryMetadata[] = [];
@@ -189,8 +190,13 @@ async function syncLibrary(): Promise<void> {
   for (const section of await librarySections()) {
     if (section.type === 'movie') {
       for (const m of await serverGetAll(movieListPath(section.key))) {
-        movies.push({ guid: m.guid, norm: normalize(m.title), year: m.year ?? null });
-        rawMovies.push(m as unknown as LibraryMetadata);
+        const lm = m as unknown as LibraryMetadata;
+        const ids = (lm.Media ?? []).map((x) => x.id);
+        movies.push({
+          guid: m.guid, norm: normalize(m.title), year: m.year ?? null, ratingKey: lm.ratingKey, tmdbId: tmdbIdOf(lm),
+          mediaId: ids.length ? Math.max(...ids) : null,
+        });
+        rawMovies.push(lm);
       }
     } else if (section.type === 'show') {
       for (const ep of await serverGetAll(episodeListPath(section.key))) {
@@ -209,11 +215,13 @@ async function syncLibrary(): Promise<void> {
 
   transaction(() => {
     db.exec('DELETE FROM library_movies; DELETE FROM library_episodes;');
-    const im = db.prepare('INSERT INTO library_movies (guid, title_norm, year) VALUES (?, ?, ?)');
-    for (const m of movies) im.run(m.guid, m.norm, m.year);
+    const im = db.prepare('INSERT INTO library_movies (guid, title_norm, year, rating_key, tmdb_id, media_id) VALUES (?, ?, ?, ?, ?, ?)');
+    for (const m of movies) im.run(m.guid, m.norm, m.year, m.ratingKey, m.tmdbId, m.mediaId);
     const ie = db.prepare('INSERT INTO library_episodes (guid, show_guid, show_norm, season, episode, title_norm) VALUES (?, ?, ?, ?, ?, ?)');
     for (const e of episodes) ie.run(e.guid, e.showGuid, e.showNorm, e.season, e.episode, e.norm);
   });
   console.log(`[sync] library: ${movies.length} movies, ${episodes.length} episodes`);
   await updateLibraryTools({ movies: rawMovies, episodes: rawEpisodes });
+  // After the tools, so a short copy (failed recording) doesn't count as recorded.
+  updateRecordedWishes();
 }

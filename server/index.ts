@@ -9,13 +9,14 @@ import { config } from './config.js';
 import { db, getMeta, now } from './db.js';
 import { endSession, loadUser, loginWithPlexToken, requireUser, startSession } from './auth.js';
 import { authUrl, checkPin, createPin, discoverSearch, machineIdentifier } from './plex.js';
-import { getChannels, getCountries, getGenres, allItems, getItem, queryCatalog, reloadCatalog, type Query } from './catalog.js';
+import { getChannels, getCountries, getGenres, allItems, getItem, getRecordingState, isScheduled, queryCatalog, reloadCatalog, type Query } from './catalog.js';
 import { isSyncing, refreshTmdb, runSync, updateRecommendations } from './sync.js';
 import { languages, localeOf, resolveLanguage, t } from './i18n.js';
 import { mailEnabled } from './mail.js';
 import { sendAlerts, sendTestEmail, wishMatches, type WishRow } from './notify.js';
 import { tmdbEnabled } from './tmdb.js';
 import { recommendationsFor } from './recommend.js';
+import { mediaBaseline, RECORDED_KEEP_DAYS } from './wishlist.js';
 import { addIgnore, clearIgnores, listIgnores, removeIgnore } from './ignores.js';
 import { cleanConditions, compileConditions, countMatches, deleteRule, listRules, saveRule } from './rules.js';
 import { matchesWords, normalize } from './text.js';
@@ -311,17 +312,28 @@ await app.register(async (api) => {
   api.get('/api/wishlist', async (request) => {
     const wishes = db.prepare('SELECT * FROM wishlist WHERE user_id = ? ORDER BY created_at DESC').all(request.user!.id) as unknown as (WishRow & Record<string, unknown>)[];
     const items = [...allItems()];
+    const rec = await getRecordingState();
     const ts = now();
     return wishes.map((w) => {
+      const recordedAt = (w.recorded_at as number | null) ?? null;
+      const { media_baseline: _b, recorded_at: _r, recorded_key: _k, ...rest } = w;
+      // Recorded movies are done: no matches, just the link to the copy in the library.
+      const recorded = recordedAt != null ? { at: recordedAt, ratingKey: w.recorded_key as string | null, removeAt: recordedAt + RECORDED_KEEP_DAYS * 86400 } : null;
       // Only titles that still air count as found; the soonest airing comes first.
-      const matches = items
-        .filter((i) => wishMatches(w, i))
-        .map((i) => ({ item: i, next: i.airings.filter((a) => a.endsAt >= ts).sort((a, b) => a.beginsAt - b.beginsAt)[0] }))
-        .filter((m) => m.next)
-        .sort((a, b) => a.next!.beginsAt - b.next!.beginsAt);
+      const matches = recorded
+        ? []
+        : items
+            .filter((i) => wishMatches(w, i))
+            .map((i) => {
+              const upcoming = i.airings.filter((a) => a.endsAt >= ts).sort((a, b) => a.beginsAt - b.beginsAt);
+              return { item: i, next: upcoming[0], scheduled: upcoming.find((a) => isScheduled(i, a, rec)) };
+            })
+            .filter((m) => m.next)
+            .sort((a, b) => a.next!.beginsAt - b.next!.beginsAt);
       return {
-        ...w,
-        matches: matches.slice(0, 20).map(({ item: i, next: a }) => ({
+        ...rest,
+        recorded,
+        matches: matches.slice(0, 20).map(({ item: i, next: a, scheduled }) => ({
           guid: i.guid,
           title: i.title,
           year: i.year,
@@ -335,6 +347,9 @@ await app.register(async (api) => {
             season: a!.season,
             episode: a!.episode,
           },
+          /** Start of the first upcoming airing Plex will record. */
+          scheduledAt: scheduled?.beginsAt ?? null,
+          subscribed: rec.subscribed.has(i.guid),
         })),
         matchCount: matches.length,
       };
@@ -371,11 +386,14 @@ await app.register(async (api) => {
     if (!title || (body.kind !== 'title' && body.kind !== 'phrase')) return reply.code(400).send({ error: 'bad request' });
     const userId = request.user!.id;
     const res = db
-      .prepare('INSERT INTO wishlist (user_id, kind, type, guid, tmdb_id, title, title_norm, year, thumb, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .prepare(
+        `INSERT INTO wishlist (user_id, kind, type, guid, tmdb_id, title, title_norm, year, thumb, media_baseline, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
       .run(
         userId, body.kind, body.type ?? null, body.kind === 'title' ? (body.guid ?? null) : null,
         body.kind === 'title' && Number.isInteger(body.tmdbId) ? body.tmdbId! : null,
-        title, normalize(title), body.year ?? null, body.thumb ?? null, now(),
+        title, normalize(title), body.year ?? null, body.thumb ?? null, mediaBaseline(), now(),
       );
     // Report matches already in the guide right away instead of waiting for the nightly refresh.
     sendAlerts(userId).catch((err) => console.error('[notify]', err));

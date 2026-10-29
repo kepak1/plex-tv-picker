@@ -118,6 +118,8 @@ export interface Wish {
   title: string;
   year: number | null;
   thumb: string | null;
+  /** Movie recorded after the wish was added; the wish is removed at `removeAt`. */
+  recorded: { at: number; ratingKey: string | null; removeAt: number } | null;
   matchCount: number;
   /** Guide titles that match and still air, soonest airing first. */
   matches: {
@@ -127,6 +129,10 @@ export interface Wish {
     type: string;
     epgKey: string;
     next: { beginsAt: number; channelTitle: string | null; channelVcn: string | null; season: number | null; episode: number | null };
+    /** Start of the first upcoming airing Plex will record. */
+    scheduledAt: number | null;
+    /** The title has a recording rule. */
+    subscribed: boolean;
   }[];
 }
 

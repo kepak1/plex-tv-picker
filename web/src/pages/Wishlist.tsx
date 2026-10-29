@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type Suggestion } from '../api';
+import { api, type Suggestion, type Wish } from '../api';
 import { useApp } from '../app';
 import { channelName, episodeLabel, formatAiring, img } from '../format';
+import { localeTag } from '../i18n';
 
 const MATCHES_SHOWN = 5;
 
@@ -33,10 +34,12 @@ export function Wishlist() {
     };
   }, [query]);
 
-  // Wishes found in the guide first, soonest airing first; the rest stay newest first.
+  // Recorded movies first (newest first), then wishes found in the guide, soonest airing first;
+  // the rest stay newest first.
   const sorted = useMemo(
     () =>
       [...wishes].sort((a, b) => {
+        if (a.recorded || b.recorded) return (b.recorded?.at ?? 0) - (a.recorded?.at ?? 0);
         const na = a.matches[0]?.next.beginsAt;
         const nb = b.matches[0]?.next.beginsAt;
         if (na != null && nb != null) return na - nb;
@@ -45,6 +48,8 @@ export function Wishlist() {
     [wishes],
   );
   const found = wishes.filter((w) => w.matchCount > 0).length;
+  const recorded = wishes.filter((w) => w.recorded).length;
+  const willRecord = (w: Wish) => w.matches.some((m) => m.scheduledAt != null);
 
   const add = async (body: object) => {
     await api('/api/wishlist', { method: 'POST', json: body });
@@ -110,19 +115,35 @@ export function Wishlist() {
         <p className="empty">{t('wishlist.empty')}</p>
       ) : (
         <>
+          {recorded > 0 && <p className="ok-text small">{t('wishlist.recordedCount', { count: recorded })}</p>}
           {found > 0 && <p className="ok-text small">{t('wishlist.foundCount', { count: found })}</p>}
           <ul className="rows">
             {sorted.map((w) => (
-              <li key={w.id} className={`row-item${w.matchCount ? ' found' : ''}`}>
+              <li key={w.id} className={`row-item${w.recorded || w.matchCount ? ' found' : ''}`}>
                 {w.thumb ? <img src={img(w.thumb, 100)} alt="" className="row-thumb" loading="lazy" /> : <span className="row-thumb empty">“”</span>}
                 <div className="grow">
                   <div>
                     <b>{w.title}</b> {w.year && <span className="muted">({w.year})</span>}{' '}
                     {w.kind === 'phrase' ? <span className="badge">{t('wishlist.phrase')}</span> : null}
                     {w.type && <span className="badge type">{t(`item.${w.type}`)}</span>}
+                    {w.recorded && <span className="badge ok">✓ {t('wishlist.recorded')}</span>}
                     {w.matchCount > 0 && <span className="badge ok">{t('wishlist.found')}</span>}
+                    {willRecord(w) && <span className="badge ok">● {t('wishlist.willRecord')}</span>}
                   </div>
-                  {w.matchCount ? (
+                  {w.recorded ? (
+                    <div className="small">
+                      <span className="muted">
+                        {t('wishlist.recordedText', {
+                          date: new Date(w.recorded.removeAt * 1000).toLocaleDateString(localeTag(), { dateStyle: 'medium' }),
+                        })}
+                      </span>{' '}
+                      {w.recorded.ratingKey && (
+                        <a href={plexLink(`/library/metadata/${w.recorded.ratingKey}`)} target="_blank" rel="noreferrer">
+                          {t('item.openInPlex')}
+                        </a>
+                      )}
+                    </div>
+                  ) : w.matchCount ? (
                     <ul className="wish-matches">
                       {w.matches.slice(0, MATCHES_SHOWN).map((m) => (
                         <li key={m.guid}>
@@ -135,6 +156,13 @@ export function Wishlist() {
                             {m.type === 'show' && episodeLabel(m.next) && <span className="muted"> · {episodeLabel(m.next)}</span>}
                           </span>
                           <span className="muted">{[m.next.channelVcn, channelName(m.next.channelTitle)].filter(Boolean).join(' ')}</span>
+                          {m.scheduledAt != null ? (
+                            <span className="badge ok">
+                              {m.scheduledAt === m.next.beginsAt ? t('item.scheduled') : t('wishlist.recordingAt', { when: formatAiring(m.scheduledAt) })}
+                            </span>
+                          ) : (
+                            m.subscribed && <span className="badge ok">{t('item.subscribed')}</span>
+                          )}
                           <a className="small" href={plexLink(m.epgKey)} target="_blank" rel="noreferrer">
                             {t('item.openInPlex')}
                           </a>
